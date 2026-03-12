@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Phishing Detector</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+
+<body>
+    <div class="container">
+        <h2>Phishing Detector</h2>
+        <div id="loader" class="loader">Analyzing page...</div>
+        <div id="result" class="hidden">
+            <h3 id="status-text">Detecting...</h3>
+            <p id="confidence-text"></p>
+
+            <div id="feature-details"
+                style="text-align: left; font-size: 0.8rem; background: white; padding: 10px; border-radius: 6px; margin: 10px 0; border: 1px solid #e5e7eb; display: none;">
+                <strong>AI Feature Breakdown:</strong>
+                <ul style="margin: 5px 0 0 0; padding-left: 20px; color: #4b5563;">
+                    <li>URL Length: <span id="feat-len" style="font-weight: bold;"></span></li>
+                    <li>Has '@' symbol: <span id="feat-at" style="font-weight: bold;"></span></li>
+                    <li>Subdomains: <span id="feat-sub" style="font-weight: bold;"></span></li>
+                    <li>HTTPS Encrypted: <span id="feat-https" style="font-weight: bold;"></span></li>
+                    <li>Suspicious DOM Elements: <span id="feat-dom" style="font-weight: bold;"></span></li>
+                </ul>
+            </div>
+
+            <p id="bc-logged" class="blockchain-badge hidden">Logged to Blockchain</p>
+        </div>
+        <div id="error" class="hidden error-text">
+            Cannot analyze page. Either reload the page or ensure backend is running.
+        </div>
+        <button id="reanalyze-btn">Re-analyze</button>
+
+        <div style="margin-top: 20px; border-top: 1px solid #e5e7eb; padding-top: 15px;">
+            <button id="dashboard-btn" style="background-color: #10b981; width: 100%;">View Dashboard</button>
+        </div>
+    </div>
+    <script src="popup.js"></script>
+</body>
+
+</html>
