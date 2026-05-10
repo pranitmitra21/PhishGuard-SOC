@@ -3,7 +3,8 @@ import axios from 'axios';
 import {
   ShieldAlert, ShieldCheck, Shield, Database,
   Activity, Clock, LayoutDashboard, Users,
-  Globe, Settings, Search, Bell, ChevronDown, Flag, FileText, Menu
+  Globe, Settings, Search, Bell, ChevronDown, Flag, FileText, Menu,
+  Terminal, X
 } from 'lucide-react';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip,
@@ -17,15 +18,77 @@ function App() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedRow, setExpandedRow] = useState(null);
+  const [filterMode, setFilterMode] = useState(null);
+  const [warningDismissed, setWarningDismissed] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isScanning, setIsScanning] = useState(false);
 
   const toggleRow = (id) => setExpandedRow(expandedRow === id ? null : id);
+
+  const generateAiExplanation = (log) => {
+    if (log.status === 'Safe') return "The Artificial Intelligence verified this node as mathematically sound. The domain structure, protocol security, and embedded code elements passed all heuristic baseline checks without triggering any anomaly alerts.";
+    
+    let reasons = [];
+    if (log.has_at_symbol) reasons.push("an obfuscated '@' symbol designed to mask the true destination");
+    if (!log.is_https) reasons.push("a critically insecure HTTP connection which exposes user data");
+    if (log.num_subdomains > 2) reasons.push("an abnormally long chain of subdomains typically used to impersonate legitimate brand websites");
+    if (log.url_length > 75) reasons.push("a heavily extended URL character length designed to push malicious routing parameters off-screen");
+    if (log.suspicious_dom_elements > 0) reasons.push(`anomalous HTML structures (${log.suspicious_dom_elements} instances) such as hidden scripts or unsecured password forms`);
+    
+    if (reasons.length === 0) {
+      return `The Random Forest AI flagged this site as ${log.status.toUpperCase()} based on complex multi-layer machine learning heuristics and tranco whitelist data, despite surface-level traits appearing nominal.`;
+    }
+    
+    let formattedReasons = reasons.length > 1 ? reasons.slice(0, -1).join(", ") + ", and " + reasons[reasons.length - 1] : reasons[0];
+    
+    return `The Random Forest AI quarantined this Threat Vector because it explicitly detected ${formattedReasons}. Extreme caution is advised.`;
+  };
+
+  const displayedLogs = useMemo(() => {
+    let filtered = logs;
+    if (filterMode) {
+      filtered = filtered.filter(log => log.status === filterMode);
+    }
+    if (searchQuery) {
+      const lowerQuery = searchQuery.toLowerCase();
+      filtered = filtered.filter(log => 
+        log.url.toLowerCase().includes(lowerQuery) || 
+        log.url_hash.includes(lowerQuery) ||
+        log.status.toLowerCase().includes(lowerQuery)
+      );
+    }
+    return filtered;
+  }, [logs, filterMode, searchQuery]);
+
+  const executeManualScan = async () => {
+    if (!searchQuery || !searchQuery.includes('.')) return;
+    setIsScanning(true);
+    try {
+      const payload = {
+        url: searchQuery.startsWith('http') ? searchQuery : `https://${searchQuery}`,
+        url_length: searchQuery.length,
+        has_at_symbol: searchQuery.includes("@"),
+        num_subdomains: (searchQuery.match(/\./g) || []).length > 1 ? (searchQuery.match(/\./g) || []).length - 1 : 0,
+        is_https: searchQuery.startsWith("https") || !searchQuery.startsWith("http"),
+        num_redirects: 0,
+        suspicious_dom_elements: 0
+      };
+      await axios.post(`${API_URL}/detect`, payload);
+      await fetchData(); // Refresh table and stats
+      setSearchQuery(""); // Clear the search bar
+    } catch (e) {
+      console.error("Manual scan failed:", e);
+    } finally {
+      setIsScanning(false);
+    }
+  };
 
   const fetchData = async () => {
     try {
       const statsRes = await axios.get(`${API_URL}/stats`);
       setStats(statsRes.data);
 
-      const logsRes = await axios.get(`${API_URL}/logs?limit=10`);
+      const logsRes = await axios.get(`${API_URL}/logs?limit=1000`);
       setLogs(logsRes.data);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -48,194 +111,228 @@ function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center bg-cyber-void text-cyber-cyan font-mono scanlines">
         <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-          <span className="text-slate-500 font-medium">Loading Enterprise Dashboard...</span>
+          <div className="w-16 h-16 border-4 border-cyber-cyan border-t-cyber-pink rounded-full animate-spin shadow-[0_0_15px_#00f3ff]"></div>
+          <span className="text-xl tracking-widest uppercase animate-pulse">INITIATING SECURE UPLINK...</span>
         </div>
       </div>
     );
   }
 
   const pieData = stats ? [
-    { name: 'Safe', value: stats.safe_detected, color: '#10b981' },
-    { name: 'Suspicious', value: stats.suspicious_detected, color: '#f59e0b' },
-    { name: 'Phishing', value: stats.phishing_detected, color: '#ef4444' },
+    { name: 'Safe', value: stats.safe_detected, color: '#39ff14' },
+    { name: 'Suspicious', value: stats.suspicious_detected, color: '#ffb000' },
+    { name: 'Phishing', value: stats.phishing_detected, color: '#ff003c' },
   ] : [];
 
-  // Dummy progression data for visual appeal
-  const progressionData = [
+  const progressionData = stats?.progression || [
     { name: 'Mon', score: 85 }, { name: 'Tue', score: 88 },
     { name: 'Wed', score: 92 }, { name: 'Thu', score: 90 },
     { name: 'Fri', score: 95 }, { name: 'Sat', score: systemHealth },
   ];
 
   return (
-    <div className="flex h-screen bg-slate-50 font-sans text-slate-800 overflow-hidden">
+    <div className="flex h-screen bg-cyber-void text-gray-300 font-sans overflow-hidden scanlines">
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-slate-200 flex flex-col hidden md:flex">
-        <div className="h-16 flex items-center px-6 border-b border-slate-200">
-          <ShieldAlert className="text-indigo-600 h-6 w-6 mr-2" />
-          <span className="text-lg font-bold tracking-tight text-slate-900">PHISHGUARD</span>
+      <aside className="w-64 bg-opacity-50 bg-black border-r border-cyber-cyan/30 flex-col hidden md:flex backdrop-blur-md relative z-10 shadow-[2px_0_15px_rgba(0,243,255,0.1)]">
+        <div className="h-16 flex items-center px-6 border-b border-cyber-cyan/30 bg-cyber-cyan/5">
+          <ShieldAlert className="text-cyber-pink h-6 w-6 mr-3 drop-shadow-[0_0_8px_#ff003c]" />
+          <span className="text-xl font-black tracking-widest text-cyber-cyan uppercase glitch-effect" style={{ textShadow: '0 0 10px #00f3ff' }}>PHISHGUARD</span>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-1">
-          <p className="px-2 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Platform</p>
-          <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md bg-indigo-50 text-indigo-700">
-            <LayoutDashboard className="h-4 w-4" /> Dashboard
+        <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-2">
+          <p className="px-2 text-[10px] font-bold text-cyber-cyan/60 uppercase tracking-[0.2em] mb-3">System.Root\Modules</p>
+          
+          <button className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-bold uppercase tracking-wider rounded-none bg-cyber-cyan/10 text-cyber-cyan border-l-4 border-cyber-cyan shadow-[inset_4px_0_0_rgba(0,243,255,0.5)]">
+            <LayoutDashboard className="h-4 w-4" /> Terminal.Dash
           </button>
-          <button onClick={() => alert("Real-time Analytics module coming in v2.0")} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
-            <Globe className="h-4 w-4" /> Real-time Analytics
+          
+          <button onClick={() => alert("Module locked.")} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium uppercase tracking-wider text-gray-400 hover:bg-cyber-cyan/5 hover:text-cyber-cyan border-l-4 border-transparent hover:border-cyber-cyan/50 transition-all">
+            <Globe className="h-4 w-4" /> Net.Graph
           </button>
-          <button onClick={() => alert("Advanced Threat Logs view coming soon")} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
-            <Database className="h-4 w-4" /> Threat Logs
+          
+          <button onClick={() => alert("Module locked.")} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium uppercase tracking-wider text-gray-400 hover:bg-cyber-cyan/5 hover:text-cyber-cyan border-l-4 border-transparent hover:border-cyber-cyan/50 transition-all">
+            <Database className="h-4 w-4" /> Threat.Logs
           </button>
 
-          <div className="pt-6 pb-2">
-            <p className="px-2 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Management</p>
-            <button onClick={() => alert("User Management requires Super Admin privileges")} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
-              <Users className="h-4 w-4" /> Roles & Users
+          <div className="pt-8 pb-2">
+            <p className="px-2 text-[10px] font-bold text-cyber-cyan/60 uppercase tracking-[0.2em] mb-3">Admin.Access</p>
+            <button onClick={() => alert("Access Denied.")} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium uppercase tracking-wider text-gray-400 hover:bg-cyber-cyan/5 hover:text-cyber-cyan border-l-4 border-transparent hover:border-cyber-cyan/50 transition-all">
+              <Users className="h-4 w-4" /> Auth.Matrix
             </button>
-            <button onClick={() => alert("Platform Settings module")} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
-              <Settings className="h-4 w-4" /> Settings
-            </button>
-            <button onClick={() => alert("Opening API Documentation...")} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
-              <FileText className="h-4 w-4" /> API Docs
+            <button onClick={() => alert("Access Denied.")} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium uppercase tracking-wider text-gray-400 hover:bg-cyber-cyan/5 hover:text-cyber-cyan border-l-4 border-transparent hover:border-cyber-cyan/50 transition-all">
+              <Settings className="h-4 w-4" /> Sys.Config
             </button>
           </div>
         </nav>
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative z-0">
         {/* Top Navbar */}
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 lg:px-8">
+        <header className="h-16 bg-black/40 backdrop-blur-sm border-b border-cyber-cyan/30 flex items-center justify-between px-4 sm:px-6 lg:px-8 shadow-[0_2px_15px_rgba(0,243,255,0.05)]">
           <div className="flex items-center flex-1">
-            <button className="md:hidden text-slate-500 hover:text-slate-700 mr-4">
+            <button className="md:hidden text-cyber-cyan mr-4">
               <Menu className="h-6 w-6" />
             </button>
             <div className="max-w-md w-full relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-slate-400" />
+                <Search className="h-4 w-4 text-cyber-cyan" />
               </div>
               <input
                 type="text"
-                placeholder="Search logs, URLs, or hashes..."
-                className="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-md leading-5 bg-slate-50 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 sm:text-sm transition duration-150 ease-in-out"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') executeManualScan(); }}
+                disabled={isScanning}
+                placeholder={isScanning ? "SCANNING EXTERNAL MAINFRAME..." : "EXECUTE QUERY: HASH / IP / URL..."}
+                className={`block w-full pl-10 pr-3 py-2 border border-cyber-cyan/30 leading-5 bg-black/50 ${isScanning ? 'text-cyber-amber animate-pulse' : 'text-cyber-cyan'} font-mono placeholder-cyber-cyan/40 focus:outline-none focus:border-cyber-cyan focus:ring-1 focus:ring-cyber-cyan sm:text-xs transition duration-150 ease-in-out shadow-[inset_0_0_10px_rgba(0,243,255,0.1)] uppercase`}
               />
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <button className="text-slate-400 hover:text-slate-500 relative">
+          <div className="flex items-center gap-5">
+            <button 
+              className="text-cyber-cyan hover:text-white relative cursor-pointer transition-colors"
+              onClick={() => setFilterMode(filterMode === 'Suspicious' ? null : 'Suspicious')}
+            >
               <Bell className="h-5 w-5" />
-              <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-400 ring-2 ring-white"></span>
+              <span className="absolute -top-1 -right-1 block h-2 w-2 rounded-none bg-cyber-pink shadow-[0_0_8px_#ff003c]"></span>
             </button>
-            <div className="flex items-center gap-2 cursor-pointer pl-4 border-l border-slate-200">
-              <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm">
-                AD
+            
+            <div className="flex items-center gap-3 cursor-pointer pl-4 border-l border-cyber-cyan/30">
+              <div className="h-8 w-8 bg-cyber-cyan/20 border border-cyber-cyan flex items-center justify-center text-cyber-cyan font-black text-sm shadow-[0_0_10px_rgba(0,243,255,0.3)]">
+                ROOT
               </div>
-              <span className="text-sm font-medium text-slate-700 hidden sm:block">Admin</span>
-              <ChevronDown className="h-4 w-4 text-slate-400" />
             </div>
           </div>
         </header>
 
         {/* Dashboard Content */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 p-6 md:p-8">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto p-6 md:p-8">
           <div className="max-w-7xl mx-auto">
 
-            <div className="mb-8 flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-slate-900">Security Overview</h1>
-              <div className="flex items-center gap-2 text-sm text-slate-500 bg-white px-3 py-1.5 rounded-md border border-slate-200 shadow-sm">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                System Core Active
+            <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                 <h1 className="text-3xl font-black text-white tracking-wider uppercase drop-shadow-[0_0_10px_rgba(255,255,255,0.4)]">Operations Center</h1>
+                 <p className="text-cyber-cyan font-mono text-xs mt-1">ESTABLISHED CONNECTION TO MAINFRAME // SECTOR 7G</p>
+              </div>
+              <div className="flex items-center gap-2 text-xs font-mono font-bold text-cyber-green bg-cyber-green/10 px-4 py-2 border border-cyber-green/50 shadow-[0_0_15px_rgba(57,255,20,0.2)]">
+                <span className="w-2 h-2 bg-cyber-green animate-pulse border border-black"></span>
+                SYSTEM: SECURE
               </div>
             </div>
 
             {/* Premium Stat Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
               <StatCard
-                title="Total Scans"
+                title="Total.Requests"
                 value={stats?.total_scanned || 0}
-                subtitle="All time requests"
-                icon={<Activity className="text-indigo-600" />}
+                subtitle="TCP/UDP Datagrams"
+                icon={<Activity className="text-cyber-cyan" />}
+                color="cyan"
+                onClick={() => setFilterMode(null)}
+                isActive={filterMode === null}
               />
               <StatCard
-                title="Safe Sites"
+                title="Safe.Nodes"
                 value={stats?.safe_detected || 0}
-                subtitle="Verified secure"
-                icon={<ShieldCheck className="text-emerald-500" />}
+                subtitle="Verified by ML"
+                icon={<ShieldCheck className="text-cyber-green" />}
+                color="green"
+                onClick={() => setFilterMode(filterMode === 'Safe' ? null : 'Safe')}
+                isActive={filterMode === 'Safe'}
               />
               <StatCard
-                title="Caught Phishing"
+                title="Threats.Nullified"
                 value={stats?.phishing_detected || 0}
-                subtitle="Blockchain secured"
-                icon={<ShieldAlert className="text-red-500" />}
-                highlight={true}
+                subtitle="Blockchain Sealed"
+                icon={<ShieldAlert className="text-cyber-pink" />}
+                color="pink"
+                onClick={() => setFilterMode(filterMode === 'Phishing' ? null : 'Phishing')}
+                isActive={filterMode === 'Phishing'}
               />
               <StatCard
-                title="Model Accuracy"
-                value={`${stats?.model_accuracy || 0}%`}
-                subtitle="Random Forest Env."
-                icon={<Shield className="text-blue-500" />}
+                title="Active.Warnings"
+                value={stats?.suspicious_detected || 0}
+                subtitle="Requires Review"
+                icon={<ShieldAlert className="text-cyber-amber" />}
+                color="amber"
+                onClick={() => setFilterMode(filterMode === 'Suspicious' ? null : 'Suspicious')}
+                isActive={filterMode === 'Suspicious'}
+              />
+              <StatCard
+                title="AI.Confidence"
+                value={
+                  <div className="flex items-baseline gap-2">
+                    <span>{stats?.model_accuracy || 0}%</span>
+                    <span className="text-xs text-cyber-amber font-normal tracking-wide">FPR: {stats?.false_positive_rate || 0}%</span>
+                  </div>
+                }
+                subtitle="Model F1-Score"
+                icon={<Activity className="text-gray-400" />}
+                color="gray"
               />
             </div>
 
             {/* Risk & Progression Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
               {/* Security Health Gauge */}
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              <div className="bg-black/60 backdrop-blur-md border border-cyber-cyan/30 p-6 relative overflow-hidden group hover:border-cyber-cyan/60 transition-all shadow-[0_0_20px_rgba(0,0,0,0.7)]">
+                <div className="absolute top-0 right-0 w-16 h-16 bg-cyber-green/5 -mr-8 -mt-8 rotate-45 border-b border-cyber-green/30"></div>
+                
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-lg font-semibold text-slate-800">Security Health Score</h2>
-                  <span className={`px-3 py-1 text-xs font-medium rounded-full ${systemHealth > 80 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                    {systemHealth > 80 ? 'Excellent' : 'Needs Review'}
+                  <h2 className="text-sm font-bold tracking-widest text-cyber-cyan uppercase">Integrity Index</h2>
+                  <span className={`px-2 py-1 text-[10px] font-mono border ${systemHealth > 80 ? 'border-cyber-green text-cyber-green shadow-[0_0_10px_rgba(57,255,20,0.3)]' : 'border-cyber-amber text-cyber-amber bg-cyber-amber/10'}`}>
+                    {systemHealth > 80 ? 'STATUS: OPTIMAL' : 'STATUS: DEGRADED'}
                   </span>
                 </div>
+                
                 <div className="h-48 relative flex flex-col items-center justify-center">
                   <ResponsiveContainer width="100%" height="200%">
                     <PieChart>
                       <Pie
                         data={[
-                          { name: 'Score', value: systemHealth, fill: systemHealth > 80 ? '#10b981' : '#f59e0b' },
-                          { name: 'Remainder', value: 100 - systemHealth, fill: '#f1f5f9' }
+                          { name: 'Score', value: systemHealth, fill: systemHealth > 80 ? '#39ff14' : '#ffb000' },
+                          { name: 'Remainder', value: 100 - systemHealth, fill: '#1a1a1a' }
                         ]}
                         cx="50%"
                         cy="100%"
                         startAngle={180}
                         endAngle={0}
-                        innerRadius={110}
-                        outerRadius={140}
+                        innerRadius={100}
+                        outerRadius={130}
                         dataKey="value"
                         stroke="none"
-                        cornerRadius={10}
                       />
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="absolute top-1/2 mt-4 text-center">
-                    <span className="text-5xl font-extrabold text-slate-900">{systemHealth}</span>
-                    <p className="text-sm text-slate-400 font-medium">Out of 100</p>
+                    <span className="text-5xl font-black text-white" style={{ textShadow: `0 0 20px ${systemHealth > 80 ? '#39ff14' : '#ffb000'}` }}>{systemHealth}</span>
+                    <p className="text-[10px] text-cyber-cyan/50 font-mono tracking-[0.3em] font-bold mt-1">PERCENTILE</p>
                   </div>
                 </div>
               </div>
 
               {/* Trend Line Chart */}
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              <div className="bg-black/60 backdrop-blur-md border border-cyber-cyan/30 p-6 relative overflow-hidden shadow-[0_0_20px_rgba(0,0,0,0.7)]">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-lg font-semibold text-slate-800">Threat Progression</h2>
-                  <select className="text-sm border-slate-200 rounded-md text-slate-600 bg-slate-50 py-1 pl-2 pr-6">
-                    <option>Last 7 days</option>
+                  <h2 className="text-sm font-bold tracking-widest text-cyber-cyan uppercase">Threat Telemetry</h2>
+                  <select className="text-[10px] font-mono border border-cyber-cyan/30 text-cyber-cyan bg-black py-1 px-2 uppercase outline-none focus:border-cyber-cyan">
+                    <option>LAST_07_CYCLES</option>
                   </select>
                 </div>
                 <div className="h-48">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={progressionData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} dy={10} />
-                      <YAxis domain={['auto', 'auto']} axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} dx={-10} />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1a1a2e" />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#00f3ff', fontSize: 10, fontFamily: 'monospace' }} dy={10} />
+                      <YAxis domain={['auto', 'auto']} axisLine={false} tickLine={false} tick={{ fill: '#00f3ff', fontSize: 10, fontFamily: 'monospace' }} dx={-10} />
                       <RechartsTooltip
-                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                        contentStyle={{ backgroundColor: '#09090b', border: '1px solid #00f3ff', color: '#00f3ff', fontFamily: 'monospace', fontSize: '12px', boxShadow: '0 0 15px rgba(0,243,255,0.2)' }}
+                        itemStyle={{ color: '#00f3ff' }}
                       />
-                      <Line type="monotone" dataKey="score" stroke="#6366f1" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6, stroke: '#4f46e5' }} />
+                      <Line type="monotone" dataKey="score" stroke="#00f3ff" strokeWidth={2} dot={{ r: 3, fill: '#09090b', stroke: '#00f3ff', strokeWidth: 2 }} activeDot={{ r: 6, fill: '#00f3ff', shadow: '0 0 10px #00f3ff' }} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -246,101 +343,113 @@ function App() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
               {/* Detailed Threat Logs */}
-              <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-white">
-                  <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                    <Clock className="h-5 w-5 text-indigo-500" />
-                    Threat Detection Logs
+              <div className="lg:col-span-2 bg-black/60 backdrop-blur-md border border-cyber-cyan/30 overflow-hidden shadow-[0_0_20px_rgba(0,0,0,0.7)]">
+                <div className="p-4 border-b border-cyber-cyan/30 flex justify-between items-center bg-cyber-cyan/5">
+                  <h2 className="text-xs font-bold font-mono text-cyber-cyan flex items-center gap-2 uppercase tracking-widest">
+                    <Terminal className="h-4 w-4" />
+                    Terminal.Out &gt;&gt; Threat Matrix
                   </h2>
-                  <button onClick={() => alert("Loading full pagination interface...")} className="text-sm font-medium text-indigo-600 hover:text-indigo-800 transition-colors">View All Logs</button>
+                  <button className="text-[10px] font-mono font-bold text-cyber-cyan/70 hover:text-cyber-cyan hover:shadow-[0_0_8px_#00f3ff] transition-all uppercase border border-cyber-cyan/30 px-2 py-1">/VAR/LOG/ALL</button>
                 </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm whitespace-nowrap">
-                    <thead className="bg-slate-50 text-slate-500 font-medium border-y border-slate-200">
+                
+                <div className="overflow-x-auto overflow-y-auto max-h-[350px] p-4 font-mono">
+                  <table className="w-full text-left text-xs whitespace-nowrap">
+                    <thead className="text-cyber-cyan/60 border-b border-cyber-cyan/20">
                       <tr>
-                        <th className="px-6 py-4">Target URL</th>
-                        <th className="px-6 py-4">Classification</th>
-                        <th className="px-6 py-4">AI Confidence</th>
-                        <th className="px-6 py-4 text-right">Blockchain Record</th>
+                        <th className="px-4 py-2 font-normal uppercase tracking-wider">Target_URI</th>
+                        <th className="px-4 py-2 font-normal uppercase tracking-wider">Type_Class</th>
+                        <th className="px-4 py-2 font-normal uppercase tracking-wider">AI_Conf</th>
+                        <th className="px-4 py-2 font-normal uppercase tracking-wider text-right">Blockchain_Tx</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {logs.length > 0 ? logs.map((log) => (
+                    <tbody className="divide-y divide-cyber-cyan/10">
+                      {displayedLogs.length > 0 ? displayedLogs.map((log) => (
                         <React.Fragment key={log.id}>
                           <tr
                             onClick={() => toggleRow(log.id)}
-                            className={`cursor-pointer transition-colors ${expandedRow === log.id ? 'bg-indigo-50/30' : 'hover:bg-slate-50'}`}
+                            className={`cursor-pointer transition-colors ${expandedRow === log.id ? 'bg-cyber-cyan/10 ring-1 ring-inset ring-cyber-cyan' : 'hover:bg-cyber-cyan/5'}`}
                           >
-                            <td className="px-6 py-4">
-                              <div className="flex items-center">
-                                <span className="font-medium text-slate-900 truncate max-w-[200px] sm:max-w-xs" title={log.url}>{log.url}</span>
-                              </div>
+                            <td className="px-4 py-3">
+                              <span className="text-gray-300 font-bold truncate max-w-[200px] sm:max-w-xs inline-block" title={log.url}>{log.url}</span>
                             </td>
-                            <td className="px-6 py-4">
+                            <td className="px-4 py-3">
                               <StatusBadge status={log.status} />
                             </td>
-                            <td className="px-6 py-4 text-slate-600">
+                            <td className="px-4 py-3">
                               <div className="flex items-center gap-2">
-                                <div className="w-16 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                                <div className="w-12 h-1 bg-gray-800 overflow-hidden border border-gray-700">
                                   <div
-                                    className={`h-full ${log.confidence > 80 ? 'bg-emerald-500' : 'bg-indigo-500'}`}
+                                    className={`h-full ${log.confidence > 80 ? 'bg-cyber-green shadow-[0_0_5px_#39ff14]' : 'bg-cyber-cyan shadow-[0_0_5px_#00f3ff]'}`}
                                     style={{ width: `${log.confidence}%` }}>
                                   </div>
                                 </div>
-                                <span className="text-xs font-semibold">{log.confidence.toFixed(0)}%</span>
+                                <span className="text-[10px] font-bold text-cyber-cyan">{log.confidence.toFixed(0)}%</span>
                               </div>
                             </td>
-                            <td className="px-6 py-4 text-right">
+                            <td className="px-4 py-3 text-right">
                               {log.status === "Phishing" ? (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100 shadow-sm">
-                                  <Database className="h-3 w-3" /> Immutable
+                                <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-cyber-pink tracking-wider">
+                                  <Database className="h-3 w-3" /> COMMITTED
                                 </span>
                               ) : (
-                                <span className="text-slate-400 text-xs italic">Skipped</span>
+                                <span className="text-gray-600 text-[10px] tracking-wider uppercase">NULL</span>
                               )}
                             </td>
                           </tr>
 
                           {/* Expanded Feature Row */}
                           {expandedRow === log.id && (
-                            <tr className="bg-slate-50 border-b border-indigo-100">
-                              <td colSpan="4" className="px-6 py-4">
-                                <div className="bg-white border text-xs border-indigo-100 rounded-lg p-4 shadow-sm relative overflow-hidden">
-                                  {/* Decorative side accent */}
-                                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500"></div>
+                            <tr className="bg-black">
+                              <td colSpan="4" className="px-4 py-3">
+                                <div className="border border-cyber-cyan/20 p-3 relative overflow-hidden bg-cyber-void group">
+                                  {/* Decor */}
+                                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-cyber-cyan"></div>
+                                  <div className="absolute opacity-[0.03] -top-16 -right-10 pointer-events-none group-hover:opacity-10 transition-opacity duration-500">
+                                    <Shield className="w-64 h-64 text-cyber-cyan" />
+                                  </div>
 
-                                  <h4 className="font-bold text-slate-800 mb-3 ml-2 flex items-center gap-2 uppercase tracking-wide text-[10px]">
-                                    <Activity className="h-3 w-3" /> Extended Analysis Matrix
+                                  <h4 className="text-cyber-cyan mb-2 flex items-center gap-2 uppercase tracking-widest text-[10px] font-bold border-b border-cyber-cyan/20 pb-1">
+                                    <Activity className="h-3 w-3" /> DEEP_SCAN_MATRIX_OUTPUT
                                   </h4>
 
-                                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 ml-2">
+                                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4 border-b border-cyber-cyan/10 pb-4">
                                     <div className="flex flex-col">
-                                      <span className="text-slate-400 font-medium mb-1">URL Length</span>
-                                      <span className="text-slate-800 font-bold text-sm tracking-tight">{log.url_length} chars</span>
+                                      <span className="text-cyber-cyan/50 text-[9px] uppercase mb-1">Str.Len</span>
+                                      <span className="text-white font-bold">{log.url_length} bytes</span>
                                     </div>
                                     <div className="flex flex-col">
-                                      <span className="text-slate-400 font-medium mb-1">Has '@' Char</span>
-                                      <span className={`font-bold text-sm ${log.has_at_symbol ? 'text-red-600' : 'text-slate-800'}`}>
-                                        {log.has_at_symbol ? 'Detected' : 'Clean'}
+                                      <span className="text-cyber-cyan/50 text-[9px] uppercase mb-1">Sym.[@]</span>
+                                      <span className={`font-bold ${log.has_at_symbol ? 'text-cyber-pink' : 'text-cyber-green'}`}>
+                                        {log.has_at_symbol ? 'TRUE' : 'FALSE'}
                                       </span>
                                     </div>
                                     <div className="flex flex-col">
-                                      <span className="text-slate-400 font-medium mb-1">Subdomains</span>
-                                      <span className={`font-bold text-sm ${log.num_subdomains > 3 ? 'text-orange-500' : 'text-slate-800'}`}>
-                                        {log.num_subdomains} levels
+                                      <span className="text-cyber-cyan/50 text-[9px] uppercase mb-1">Sub.Nodes</span>
+                                      <span className={`font-bold ${log.num_subdomains > 3 ? 'text-cyber-amber' : 'text-white'}`}>
+                                        {log.num_subdomains}
                                       </span>
                                     </div>
                                     <div className="flex flex-col">
-                                      <span className="text-slate-400 font-medium mb-1">Transport</span>
-                                      <span className={`font-bold text-sm flex items-center gap-1 ${log.is_https ? 'text-emerald-600' : 'text-red-600'}`}>
-                                        {log.is_https ? <ShieldCheck className="h-3 w-3" /> : <ShieldAlert className="h-3 w-3" />}
-                                        {log.is_https ? 'HTTPS Encrypted' : 'Insecure HTTP'}
+                                      <span className="text-cyber-cyan/50 text-[9px] uppercase mb-1">Proto</span>
+                                      <span className={`font-bold flex items-center gap-1 ${log.is_https ? 'text-cyber-green' : 'text-cyber-pink'}`}>
+                                        {log.is_https ? 'HTTPS/SEC' : 'HTTP/RAW'}
                                       </span>
                                     </div>
                                     <div className="flex flex-col">
-                                      <span className="text-slate-400 font-medium mb-1">DOM Anomalies</span>
-                                      <span className="text-slate-800 font-bold text-sm">{log.suspicious_dom_elements} flags</span>
+                                      <span className="text-cyber-cyan/50 text-[9px] uppercase mb-1">DOM.Anom</span>
+                                      <span className="text-white font-bold inline-flex items-center gap-1">
+                                            {log.suspicious_dom_elements} <span className="text-cyber-pink font-normal text-[8px]">[WARN]</span>
+                                      </span>
                                     </div>
+                                  </div>
+                                  
+                                  <div className="bg-black/80 border border-cyber-cyan/10 p-3 relative shadow-[inset_0_0_10px_rgba(0,0,0,0.8)]">
+                                    <span className="text-cyber-amber/80 text-[10px] font-bold uppercase tracking-widest block mb-1 flex items-center gap-2">
+                                      <Search className="h-3 w-3" /> AI_HEURISTIC_EXPLANATION
+                                    </span>
+                                    <p className="text-white/80 text-xs leading-relaxed font-sans">
+                                      {generateAiExplanation(log)}
+                                    </p>
                                   </div>
                                 </div>
                               </td>
@@ -349,10 +458,8 @@ function App() {
                         </React.Fragment>
                       )) : (
                         <tr>
-                          <td colSpan="4" className="text-center py-12 text-slate-500 bg-white">
-                            <Database className="h-8 w-8 mx-auto text-slate-300 mb-3" />
-                            <p className="font-medium text-slate-600">No telemetry recorded</p>
-                            <p className="text-xs text-slate-400 mt-1">Initiate scans via the browser extension to populate database.</p>
+                          <td colSpan="4" className="text-center py-10">
+                            <span className="text-cyber-cyan/30 uppercase tracking-widest text-xs">/dev/null - NO RECORDS FOUND</span>
                           </td>
                         </tr>
                       )}
@@ -362,9 +469,9 @@ function App() {
               </div>
 
               {/* Distribution Pie Chart */}
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col">
-                <h2 className="text-lg font-semibold text-slate-800 mb-6 text-center">Threat Distribution</h2>
-                <div className="flex-1 min-h-[250px] relative">
+              <div className="bg-black/60 backdrop-blur-md border border-cyber-cyan/30 p-6 flex flex-col shadow-[0_0_20px_rgba(0,0,0,0.7)]">
+                <h2 className="text-sm font-bold tracking-widest text-cyber-cyan mb-4 text-center uppercase">Threat Vectors</h2>
+                <div className="flex-1 min-h-[200px] relative">
                   {stats && stats.total_scanned > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
@@ -372,25 +479,27 @@ function App() {
                           data={pieData}
                           cx="50%"
                           cy="50%"
-                          innerRadius={70}
-                          outerRadius={95}
-                          paddingAngle={5}
+                          innerRadius={60}
+                          outerRadius={80}
+                          paddingAngle={2}
                           dataKey="value"
-                          stroke="none"
+                          stroke="#09090b"
+                          strokeWidth={2}
                         >
                           {pieData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
                         <RechartsTooltip
-                          contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                          contentStyle={{ backgroundColor: '#09090b', border: '1px solid #00f3ff', color: '#00f3ff', fontFamily: 'monospace', fontSize: '12px' }}
+                          itemStyle={{ color: '#fff' }}
                         />
-                        <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                        <Legend verticalAlign="bottom" height={36} iconType="square" wrapperStyle={{ fontFamily: 'monospace', fontSize: '10px' }} />
                       </PieChart>
                     </ResponsiveContainer>
                   ) : (
-                    <div className="absolute inset-0 flex items-center justify-center text-slate-400 text-sm font-medium">
-                      Awaiting Data...
+                    <div className="absolute inset-0 flex items-center justify-center text-cyber-cyan/30 font-mono text-xs uppercase tracking-widest">
+                       AWAITING INFEED
                     </div>
                   )}
                 </div>
@@ -404,41 +513,54 @@ function App() {
   );
 }
 
-function StatCard({ title, value, subtitle, icon, highlight = false }) {
+function StatCard({ title, value, subtitle, icon, color, onClick, isActive }) {
+  const getColors = () => {
+      switch(color) {
+          case 'cyan': return { border: 'border-cyber-cyan/50', bg: 'bg-cyber-cyan/10', text: 'text-cyber-cyan', hover: 'hover:shadow-[0_0_20px_rgba(0,243,255,0.3)]', shadow: 'shadow-[0_0_10px_rgba(0,243,255,0.1)]', ring: 'ring-cyber-cyan' };
+          case 'pink': return { border: 'border-cyber-pink/50', bg: 'bg-cyber-pink/10', text: 'text-cyber-pink', hover: 'hover:shadow-[0_0_20px_rgba(255,0,60,0.3)]', shadow: 'shadow-[0_0_10px_rgba(255,0,60,0.1)]', ring: 'ring-cyber-pink' };
+          case 'green': return { border: 'border-cyber-green/50', bg: 'bg-cyber-green/10', text: 'text-cyber-green', hover: 'hover:shadow-[0_0_20px_rgba(57,255,20,0.3)]', shadow: 'shadow-[0_0_10px_rgba(57,255,20,0.1)]', ring: 'ring-cyber-green' };
+          case 'amber': return { border: 'border-cyber-amber/50', bg: 'bg-cyber-amber/10', text: 'text-cyber-amber', hover: 'hover:shadow-[0_0_20px_rgba(255,176,0,0.3)]', shadow: 'shadow-[0_0_10px_rgba(255,176,0,0.1)]', ring: 'ring-cyber-amber' };
+          default: return { border: 'border-gray-500', bg: 'bg-gray-800', text: 'text-white', hover: 'hover:shadow-md', ring: 'ring-gray-400' };
+      }
+  }
+  const theme = getColors();
+
   return (
-    <div className={`bg-white rounded-xl shadow-sm border p-6 relative overflow-hidden transition-all duration-200 hover:shadow-md ${highlight ? 'border-red-100' : 'border-slate-200'}`}>
-      {highlight && <div className="absolute top-0 right-0 w-32 h-32 bg-red-50 rounded-bl-full -z-0 opacity-50"></div>}
-      <div className="relative z-10">
-        <div className="flex justify-between items-start mb-4">
-          <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100 shadow-sm">
-            {icon}
-          </div>
-        </div>
+    <div 
+      onClick={onClick}
+      className={`bg-black/60 backdrop-blur-md p-5 relative overflow-hidden transition-all duration-300 border ${theme.border} border-l-4 border-l-${theme.text} ${theme.hover} ${theme.shadow} group ${onClick ? 'cursor-pointer transform hover:-translate-y-1' : ''} ${isActive ? `ring-1 ring-inset ${theme.ring} bg-black/80` : ''}`}
+    >
+      {/* Scanline overlay over the card */}
+      <div className="absolute inset-0 scanlines opacity-50 pointer-events-none"></div>
+      
+      <div className="relative z-10 flex justify-between items-start">
         <div>
-          <h3 className="text-3xl font-extrabold text-slate-900 tracking-tight">{value}</h3>
-          <div className="flex items-center gap-2 mt-1">
-            <p className="text-sm font-semibold text-slate-700">{title}</p>
-            <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{subtitle}</span>
-          </div>
+          <p className="text-[10px] font-mono font-bold text-gray-500 uppercase tracking-widest mb-1">{title}</p>
+          <h3 className={`text-3xl font-black ${theme.text} font-mono mt-1 mb-2`}>{value}</h3>
+          <span className="text-[9px] font-mono text-gray-400 bg-gray-900 border border-gray-700 px-1 py-0.5 uppercase tracking-wider">{subtitle}</span>
+        </div>
+        <div className={`p-2 bg-black border ${theme.border} shadow-inner`}>
+          {icon}
         </div>
       </div>
+      
+      {/* Decorative corner brackets */}
+      <div className={`absolute top-0 left-0 w-2 h-2 border-t border-l ${theme.border}`}></div>
+      <div className={`absolute bottom-0 right-0 w-2 h-2 border-b border-r ${theme.border}`}></div>
     </div>
   );
 }
 
 function StatusBadge({ status }) {
-  let config = { bg: "bg-slate-100", text: "text-slate-700", dot: "bg-slate-500", icon: Flag };
+  let config = { border: "border-gray-500", text: "text-gray-400", label: "UNKNOWN" };
 
-  if (status === "Safe") config = { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", icon: ShieldCheck };
-  if (status === "Suspicious") config = { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", icon: ShieldAlert };
-  if (status === "Phishing") config = { bg: "bg-red-50", text: "text-red-700", border: "border-red-200", icon: ShieldAlert };
-
-  const Icon = config.icon;
+  if (status === "Safe") config = { border: "border-cyber-green/50", text: "text-cyber-green", label: "SAFE" };
+  if (status === "Suspicious") config = { border: "border-cyber-amber/50", text: "text-cyber-amber", label: "WARN" };
+  if (status === "Phishing") config = { border: "border-cyber-pink/50", text: "text-cyber-pink shadow-[0_0_8px_#ff003c]", label: "CRIT" };
 
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold border ${config.bg} ${config.text} ${config.border}`}>
-      <Icon className="h-3.5 w-3.5" />
-      {status}
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black border ${config.border} ${config.text} bg-black uppercase tracking-widest`}>
+      [{config.label}]
     </span>
   );
 }

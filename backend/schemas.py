@@ -10,6 +10,8 @@ class URLFeatures(BaseModel):
     is_https: bool
     num_redirects: int
     suspicious_dom_elements: int
+    has_password_field: Optional[bool] = False
+    has_cross_origin_form: Optional[bool] = False
 
 class DetectionResponse(BaseModel):
     url: str

@@ -12,4 +12,8 @@ redis
 
 pandas
 tqdm
+tldextract
+python-whois
 
+opencv-python-headless
+scikit-image

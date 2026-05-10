@@ -1,0 +1,178 @@
+======================================================
+  PHISHGUARD SOC - FULL STARTUP PROCESS GUIDE
+======================================================
+
+PREREQUISITES
+-------------
+Make sure these are installed before starting:
+
+  Tool            Min Version   Check With
+  --------------- ------------- ------------------
+  Docker Desktop  4.x+          docker --version
+  Node.js         18+           node --version
+  Python          3.10+         python --version
+  npm             9+            npm --version
+  Google Chrome   Any           -
+
+
+======================================================
+  QUICKSTART - USE THE BAT FILE
+======================================================
+
+  Double-click START_ALL.bat in the project root.
+
+  [1] DOCKER MODE  - Full production stack (recommended)
+  [2] DEV MODE     - Separate terminals with hot-reload
+
+
+======================================================
+  OPTION A: DOCKER MODE (Recommended for demos)
+======================================================
+
+  Starts all 4 services: Postgres, Redis, Backend, Frontend
+
+  COMMAND:
+    cd d:\phishing_detection
+    docker-compose up -d
+
+  URLS:
+    Frontend Dashboard  ->  http://localhost
+    Backend API         ->  http://localhost:8000
+    API Docs (Swagger)  ->  http://localhost:8000/docs
+
+  FULL CLEAN REBUILD (if something is broken):
+    docker-compose down --volumes --remove-orphans
+    docker-compose build --no-cache
+    docker-compose up -d
+
+
+======================================================
+  OPTION B: DEV MODE (For active development)
+======================================================
+
+  Run each step in a SEPARATE terminal window.
+
+  STEP 1 - Start Database and Redis (via Docker)
+  -----------------------------------------------
+    docker-compose up -d db redis
+
+    Wait ~5 seconds for containers to become healthy.
+
+
+  STEP 2 - Start Hardhat Blockchain Node
+  -----------------------------------------------
+    cd d:\phishing_detection\blockchain
+    npx hardhat node
+
+    Leave this terminal OPEN.
+    Local chain runs at: http://localhost:8545
+
+
+  STEP 3 - Deploy Smart Contract
+  -----------------------------------------------
+    Open a NEW terminal:
+
+    cd d:\phishing_detection\blockchain
+    npx hardhat run scripts/deploy.js --network localhost
+
+    Copy the printed contract address and paste it into
+    backend/.env as: CONTRACT_ADDRESS=0x...
+
+
+  STEP 4 - Start FastAPI Backend
+  -----------------------------------------------
+    Open a NEW terminal:
+
+    cd d:\phishing_detection\backend
+    pip install -r requirements.txt
+    uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+    API is live at: http://localhost:8000
+
+
+  STEP 5 - Start React Frontend
+  -----------------------------------------------
+    Open a NEW terminal:
+
+    cd d:\phishing_detection\frontend
+    npm install --legacy-peer-deps
+    npm run dev
+
+    Dashboard is live at: http://localhost:5173
+
+
+======================================================
+  STEP 6 - LOAD THE CHROME EXTENSION (All Modes)
+======================================================
+
+  NOTE: This is a one-time setup. Only redo after
+        pulling new extension code changes.
+
+  1. Open Google Chrome
+  2. Navigate to:  chrome://extensions/
+  3. Enable "Developer Mode" (top-right toggle)
+  4. Click "Load unpacked"
+  5. Select folder:  d:\phishing_detection\extension
+  6. PhishGuard icon appears in your Chrome toolbar
+
+  After any extension code change:
+    -> Click the reload (circular arrow) button on
+       the PhishGuard card in chrome://extensions/
+
+
+======================================================
+  ENVIRONMENT VARIABLES  (backend/.env)
+======================================================
+
+  Variable                      Description
+  ----------------------------- ----------------------------------
+  DATABASE_URL                  Postgres connection string
+                                (auto-set in Docker mode)
+                                Example:
+                                postgresql://admin:admin123
+                                @localhost:5432/phishing_logs
+
+  REDIS_URL                     Redis connection string
+                                (auto-set in Docker mode)
+                                Example: redis://localhost:6379/0
+
+  WEB3_PROVIDER_URI             Hardhat or Polygon RPC endpoint
+                                Example: http://127.0.0.1:8545
+
+  CONTRACT_ADDRESS              Deployed smart contract address
+                                Example:
+                                0x5FbDB2315678afecb367f032d93F642f64180aa3
+
+  GOOGLE_SAFE_BROWSING_API_KEY  Google Safe Browsing API key
+                                Get from: Google Cloud Console
+
+
+======================================================
+  STOPPING EVERYTHING
+======================================================
+
+  Docker Mode:
+    docker-compose down
+
+  Dev Mode:
+    Close all terminal windows, then run:
+    docker-compose down
+
+
+======================================================
+  PORT REFERENCE
+======================================================
+
+  Port   Service
+  ------ ----------------------------
+  80     Frontend (Docker mode)
+  5173   Frontend (Dev mode)
+  8000   FastAPI Backend
+  8545   Hardhat Blockchain Node
+  5432   PostgreSQL Database
+  6379   Redis Cache
+
+
+======================================================
+  END OF STARTUP GUIDE
+======================================================

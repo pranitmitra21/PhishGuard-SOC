@@ -1,0 +1,9 @@
+await contract.logs(0)  // first entry
+// View a specific log entry
+await contract.isLogged("your-sha256-hash-here")
+// Check if a specific URL hash is logged
+await contract.getLogsCount()
+// View total logs on-chain
+const contract = ThreatLog.attach("0x5FbDB2315678afecb367f032d93F642f64180aa3")
+const ThreatLog = await ethers.getContractFactory("ThreatLog")
+// Attach to your deployed contract

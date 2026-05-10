@@ -1,43 +1,121 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-    <title>Phishing Detector</title>
+    <meta charset="UTF-8">
+    <title>PhishGuard SOC</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="popup.css">
 </head>
-
 <body>
-    <div class="container">
-        <h2>Phishing Detector</h2>
-        <div id="loader" class="loader">Analyzing page...</div>
-        <div id="result" class="hidden">
-            <h3 id="status-text">Detecting...</h3>
-            <p id="confidence-text"></p>
+    <!-- Scanline overlay -->
+    <div class="scanlines-overlay"></div>
 
-            <div id="feature-details"
-                style="text-align: left; font-size: 0.8rem; background: white; padding: 10px; border-radius: 6px; margin: 10px 0; border: 1px solid #e5e7eb; display: none;">
-                <strong>AI Feature Breakdown:</strong>
-                <ul style="margin: 5px 0 0 0; padding-left: 20px; color: #4b5563;">
-                    <li>URL Length: <span id="feat-len" style="font-weight: bold;"></span></li>
-                    <li>Has '@' symbol: <span id="feat-at" style="font-weight: bold;"></span></li>
-                    <li>Subdomains: <span id="feat-sub" style="font-weight: bold;"></span></li>
-                    <li>HTTPS Encrypted: <span id="feat-https" style="font-weight: bold;"></span></li>
-                    <li>Suspicious DOM Elements: <span id="feat-dom" style="font-weight: bold;"></span></li>
-                </ul>
+    <!-- Corner brackets for cyberpunk framing -->
+    <div class="corner corner-tl"></div>
+    <div class="corner corner-tr"></div>
+    <div class="corner corner-bl"></div>
+    <div class="corner corner-br"></div>
+
+    <div class="main-container">
+        <header>
+            <div class="logo-box">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+            </div>
+            <div class="header-text">
+                <h2>PHISHGUARD</h2>
+                <span class="badge">SOC_v2.0</span>
+            </div>
+            <div class="status-dot" id="connection-dot"></div>
+        </header>
+
+        <!-- Loader State -->
+        <div id="loader" class="state-view">
+            <div class="radar-spinner">
+                <div class="radar-sweep"></div>
+                <div class="radar-ring r1"></div>
+                <div class="radar-ring r2"></div>
+                <div class="radar-center"></div>
+            </div>
+            <div class="loading-text">SCANNING TARGET...</div>
+            <div class="loading-sub">Establishing secure uplink to backend...</div>
+        </div>
+
+        <!-- Result State -->
+        <div id="result" class="state-view hidden">
+            <div class="status-header">
+                <div id="status-icon" class="status-icon"></div>
+                <div>
+                    <div class="status-label">CLASSIFICATION</div>
+                    <h1 id="status-badge" class="status-text">SCANNING</h1>
+                </div>
             </div>
 
-            <p id="bc-logged" class="blockchain-badge hidden">Logged to Blockchain</p>
-        </div>
-        <div id="error" class="hidden error-text">
-            Cannot analyze page. Either reload the page or ensure backend is running.
-        </div>
-        <button id="reanalyze-btn">Re-analyze</button>
+            <div class="metric-box">
+                <div class="score-row">
+                    <span>THREAT_SCORE</span>
+                    <span id="confidence-text" class="score-value">0%</span>
+                </div>
+                <div class="progress-track">
+                    <div id="confidence-bar" class="progress-fill"></div>
+                </div>
+            </div>
 
-        <div style="margin-top: 20px; border-top: 1px solid #e5e7eb; padding-top: 15px;">
-            <button id="dashboard-btn" style="background-color: #10b981; width: 100%;">View Dashboard</button>
+            <div class="intelligence-grid">
+                <div class="intel-item full-width">
+                    <span class="intel-label">// GOOGLE_THREAT_INTEL</span>
+                    <span id="intel-safebrowsing" class="intel-value">PENDING</span>
+                </div>
+                <div class="intel-item">
+                    <span class="intel-label">TRANCO_WL</span>
+                    <span id="intel-whitelist" class="intel-value">...</span>
+                </div>
+                <div class="intel-item">
+                    <span class="intel-label">DOM_AGE</span>
+                    <span id="intel-age" class="intel-value">...</span>
+                </div>
+            </div>
+
+            <div id="feature-details" class="details-accordion">
+                <div class="accordion-header" id="toggle-details">
+                    <span>// DEEP_SCAN_OUTPUT</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </div>
+                <div class="accordion-content" id="details-content">
+                    <div class="detail-row"><span>STR.LENGTH</span><span id="feat-len"></span></div>
+                    <div class="detail-row"><span>SYM.[@]</span><span id="feat-at"></span></div>
+                    <div class="detail-row"><span>SUB.NODES</span><span id="feat-sub"></span></div>
+                    <div class="detail-row"><span>PROTO</span><span id="feat-https"></span></div>
+                    <div class="detail-row"><span>DOM.ANOM</span><span id="feat-dom"></span></div>
+                </div>
+            </div>
+
+            <div id="bc-logged" class="blockchain-status hidden">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
+                </svg>
+                TX COMMITTED TO POLYGON CHAIN
+            </div>
+        </div>
+
+        <!-- Error State -->
+        <div id="error" class="state-view hidden error-view">
+            <div class="error-icon">!</div>
+            <p class="error-title">UPLINK FAILED</p>
+            <p id="error-msg">Cannot reach backend. Ensure the service is running.</p>
+        </div>
+
+        <div class="action-dock">
+            <button class="btn btn-danger" id="report-btn">&#x26A0; REPORT_ATTACK</button>
+            <div class="btn-group">
+                <button class="btn btn-secondary" id="reanalyze-btn">RESCAN</button>
+                <button class="btn btn-primary" id="dashboard-btn">SOC_DASH</button>
+            </div>
         </div>
     </div>
     <script src="popup.js"></script>
 </body>
-
 </html>

@@ -1,11 +1,12 @@
 {
     "manifest_version": 3,
-    "name": "Phishing Detector",
-    "version": "1.0",
-    "description": "Detects phishing websites in real-time.",
+    "name": "PhishGuard SOC",
+    "version": "2.0",
+    "description": "Real-time phishing detection with ML, blockchain logging, and threat intelligence.",
     "permissions": [
         "activeTab",
-        "scripting"
+        "scripting",
+        "tabs"
     ],
     "host_permissions": [
         "*://*/*"

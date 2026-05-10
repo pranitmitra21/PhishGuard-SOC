@@ -1,14 +1,16 @@
 import joblib
 import os
+import json
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, classification_report
+from sklearn.metrics import accuracy_score, confusion_matrix
 import numpy as np
 
 # Provide paths
 PROCESSED_DATA_PATH = os.path.join(os.path.dirname(__file__), "processed_features.csv")
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "random_forest.pkl")
+METRICS_PATH = os.path.join(os.path.dirname(__file__), "model_metrics.json")
 
 def train_model():
     print(f"Loading processed dataset from {PROCESSED_DATA_PATH}...")
@@ -38,10 +40,31 @@ def train_model():
     print("Evaluating model accuracy on test split...")
     y_pred = model.predict(X_test)
     accuracy = accuracy_score(y_test, y_pred)
-    
+
+    # Compute False Positive Rate:
+    # FPR = Safe URLs incorrectly predicted as Phishing or Suspicious / Total actual Safe URLs
+    # Class labels: 0=Safe, 1=Suspicious, 2=Phishing
+    cm = confusion_matrix(y_test, y_pred)
+    classes = list(model.classes_)
+    fpr = 0.0
+    if 0 in classes:  # 0 = Safe
+        safe_idx = classes.index(0)
+        actual_safe = cm[safe_idx].sum()  # All Safe rows
+        correctly_safe = cm[safe_idx][safe_idx]  # True Negatives for phishing
+        false_positives = actual_safe - correctly_safe  # Misclassified Safe URLs
+        fpr = round((false_positives / actual_safe) * 100, 2) if actual_safe > 0 else 0.0
+
     print(f"\nModel Accuracy: {accuracy * 100:.2f}%")
-    print("\nClassification Report:")
-    print(classification_report(y_test, y_pred, target_names=['Safe', 'Suspicious', 'Phishing'], zero_division=0))
+    print(f"False Positive Rate: {fpr:.2f}%")
+
+    # Save metrics to JSON for the /stats API endpoint
+    metrics = {
+        "model_accuracy": round(accuracy * 100, 2),
+        "false_positive_rate": fpr
+    }
+    with open(METRICS_PATH, "w") as f:
+        json.dump(metrics, f)
+    print(f"Metrics saved to {METRICS_PATH}")
 
     # Save model
     joblib.dump(model, MODEL_PATH)
