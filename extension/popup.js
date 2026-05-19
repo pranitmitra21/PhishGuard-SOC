@@ -12,9 +12,23 @@ document.addEventListener('DOMContentLoaded', function () {
     const reportBtn    = document.getElementById('report-btn');
     const dashboardBtn = document.getElementById('dashboard-btn');
     const connectionDot = document.getElementById('connection-dot');
+    const authView     = document.getElementById('auth-view');
+    const authSubmitBtn = document.getElementById('auth-submit-btn');
+    const authError    = document.getElementById('auth-error');
+    const authModeTitle = document.getElementById('auth-mode-title');
+    
+    // Auth UI Elements
+    const tabLogin = document.getElementById('tab-login');
+    const tabRegister = document.getElementById('tab-register');
+    const registerFields = document.getElementById('register-fields');
+    const authRole = document.getElementById('auth-role');
+    const authWallet = document.getElementById('auth-wallet');
+    const authPin = document.getElementById('auth-pin');
+    
+    let isRegisterMode = false;
 
     // Backend API base — works for both dev (8000) and docker (80 via /api proxy)
-    const API_BASE = 'http://127.0.0.1:8000';
+    const API_BASE = 'http://127.0.0.1:8000/api';
 
     // Accordion Logic
     const toggleDetails  = document.getElementById('toggle-details');
@@ -79,6 +93,8 @@ document.addEventListener('DOMContentLoaded', function () {
             connectionDot.style.boxShadow  = '0 0 8px #00f3ff';
         }
 
+        authView.classList.add('hidden');
+
         chrome.runtime.sendMessage({ action: "analyze_current_tab" }, (response) => {
             loader.classList.add('hidden');
 
@@ -93,17 +109,24 @@ document.addEventListener('DOMContentLoaded', function () {
                 resultDiv.classList.remove('hidden');
                 applyTheme(response.status);
 
-                // Animate confidence bar
-                setTimeout(() => {
-                    const conf = response.confidence != null ? parseFloat(response.confidence) : 100;
-                    confidenceBar.style.width = `${conf}%`;
-                    animateValue(confidenceText, 0, conf, 1000);
-                }, 100);
-
-                updateIntel(response);
-
-                // Update deep scan features
+                // Update deep scan features & advanced intel if provided (Analyst/Admin payload)
                 if (response.features) {
+                    const metricBox = document.querySelector('.metric-box');
+                    if (metricBox) metricBox.style.display = 'block';
+                    const intelGrid = document.querySelector('.intelligence-grid');
+                    if (intelGrid) intelGrid.style.display = 'flex'; // or grid depending on css
+                    const featDetails = document.getElementById('feature-details');
+                    if (featDetails) featDetails.style.display = 'block';
+
+                    // Animate confidence bar
+                    setTimeout(() => {
+                        const conf = response.confidence != null ? parseFloat(response.confidence) : 100;
+                        confidenceBar.style.width = `${conf}%`;
+                        animateValue(confidenceText, 0, conf, 1000);
+                    }, 100);
+
+                    updateIntel(response);
+
                     document.getElementById('feat-len').innerText  = response.features.url_length + ' chars';
                     document.getElementById('feat-at').innerText   = response.features.has_at_symbol ? 'DETECTED' : 'CLEAN';
                     document.getElementById('feat-sub').innerText  = response.features.num_subdomains;
@@ -113,6 +136,14 @@ document.addEventListener('DOMContentLoaded', function () {
                     // Color anomalies
                     document.getElementById('feat-at').style.color    = response.features.has_at_symbol ? '#ff003c' : '#39ff14';
                     document.getElementById('feat-https').style.color = response.features.is_https ? '#39ff14' : '#ff003c';
+                } else {
+                    // RBAC Sanitized Payload (End User)
+                    const metricBox = document.querySelector('.metric-box');
+                    if (metricBox) metricBox.style.display = 'none';
+                    const intelGrid = document.querySelector('.intelligence-grid');
+                    if (intelGrid) intelGrid.style.display = 'none';
+                    const featDetails = document.getElementById('feature-details');
+                    if (featDetails) featDetails.style.display = 'none';
                 }
 
                 // Blockchain log indicator
@@ -191,13 +222,13 @@ document.addEventListener('DOMContentLoaded', function () {
             el.innerText   = "UNKNOWN";
             el.style.color = '#555';
         } else if (ageDays < 30) {
-            el.innerText   = `${ageDays}d [WARN]`;
+            el.innerText   = `${ageDays}d_[WARN]`;
             el.style.color = '#ff003c';
         } else if (ageDays > 365) {
-            el.innerText   = `${Math.floor(ageDays / 365)}yr STABLE`;
+            el.innerText   = `${Math.floor(ageDays / 365)}yr_STABLE`;
             el.style.color = '#39ff14';
         } else {
-            el.innerText   = `${ageDays} DAYS`;
+            el.innerText   = `${ageDays}_DAYS`;
             el.style.color = '#e2e8f0';
         }
     }
@@ -215,13 +246,132 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // ---- Button event listeners ----
 
-    analyze();
+    chrome.storage.local.get(['soc_token'], (res) => {
+        if (res.soc_token) {
+            analyze();
+        } else {
+            authView.classList.remove('hidden');
+            loader.classList.add('hidden');
+        }
+    });
+
+    // Logout button (connection dot)
+    if (connectionDot) {
+        connectionDot.addEventListener('click', () => {
+            chrome.storage.local.remove(['soc_token'], () => {
+                authView.classList.remove('hidden');
+                loader.classList.add('hidden');
+                resultDiv.classList.add('hidden');
+                errorDiv.classList.add('hidden');
+                authModeTitle.innerText = "SOC LOGIN";
+                authSubmitBtn.innerText = "AUTHENTICATE";
+                authError.classList.add('hidden');
+                document.getElementById('auth-username').value = "";
+                document.getElementById('auth-password').value = "";
+            });
+        });
+    }
+
+    // Auth Tabs Logic
+    tabLogin.addEventListener('click', () => {
+        isRegisterMode = false;
+        tabLogin.style.background = 'rgba(0,243,255,0.2)';
+        tabLogin.style.color = 'var(--cyber-cyan)';
+        tabRegister.style.background = 'transparent';
+        tabRegister.style.color = 'gray';
+        registerFields.classList.add('hidden');
+        authModeTitle.innerText = "SOC LOGIN";
+        authSubmitBtn.innerText = "AUTHENTICATE";
+        authError.classList.add('hidden');
+    });
+
+    tabRegister.addEventListener('click', () => {
+        isRegisterMode = true;
+        tabRegister.style.background = 'rgba(0,243,255,0.2)';
+        tabRegister.style.color = 'var(--cyber-cyan)';
+        tabLogin.style.background = 'transparent';
+        tabLogin.style.color = 'gray';
+        registerFields.classList.remove('hidden');
+        authModeTitle.innerText = "NEW IDENTITY";
+        authSubmitBtn.innerText = "CREATE IDENTITY";
+        authError.classList.add('hidden');
+    });
+
+    authRole.addEventListener('change', () => {
+        const role = authRole.value;
+        authWallet.classList.add('hidden');
+        authPin.classList.add('hidden');
+        if (role === 'Analyst') authWallet.classList.remove('hidden');
+        if (role === 'Admin') authPin.classList.remove('hidden');
+    });
+
+    authSubmitBtn.addEventListener('click', async () => {
+        const username = document.getElementById('auth-username').value;
+        const password = document.getElementById('auth-password').value;
+        if (!username || !password) return;
+        
+        authSubmitBtn.innerText = "PROCESSING...";
+        authError.classList.add('hidden');
+
+        try {
+            if (isRegisterMode) {
+                // Register
+                const payload = {
+                    username,
+                    password,
+                    role: authRole.value,
+                    wallet_id: authWallet.value,
+                    admin_pin: authPin.value
+                };
+                
+                const regRes = await fetch(`${API_BASE}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!regRes.ok) {
+                    const errText = await regRes.text();
+                    throw new Error(errText);
+                }
+            }
+
+            // Login
+            const formData = new URLSearchParams();
+            formData.append('username', username);
+            formData.append('password', password);
+
+            const res = await fetch(`${API_BASE}/auth/token`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData
+            });
+
+            if (!res.ok) throw new Error("Invalid credentials");
+            const data = await res.json();
+            
+            chrome.storage.local.set({ soc_token: data.access_token }, () => {
+                authView.classList.add('hidden');
+                analyze();
+            });
+        } catch (err) {
+            authSubmitBtn.innerText = isRegisterMode ? "CREATE IDENTITY" : "AUTHENTICATE";
+            authError.innerText = isRegisterMode ? "REGISTRATION FAILED" : "ACCESS DENIED";
+            authError.classList.remove('hidden');
+        }
+    });
 
     reanalyzeBtn.addEventListener('click', analyze);
 
-    // SOC Dashboard button — simply opens the Docker server dashboard (Port 80)
+    // SOC Dashboard button — opens the React DEV server with token
     dashboardBtn.addEventListener('click', () => {
-        chrome.tabs.create({ url: 'http://localhost' });
+        chrome.storage.local.get(['soc_token'], (res) => {
+            if (res.soc_token) {
+                chrome.tabs.create({ url: `http://localhost:5173?token=${res.soc_token}` });
+            } else {
+                chrome.tabs.create({ url: 'http://localhost:5173' });
+            }
+        });
     });
 
     reportBtn.addEventListener('click', () => {
@@ -237,24 +387,31 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            fetch(`${API_BASE}/report`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: activeTab.url })
-            }).then(response => {
-                if (response.ok) {
-                    reportBtn.innerText             = "TX_COMMITTED";
-                    reportBtn.style.background      = "rgba(57,255,20,0.1)";
-                    reportBtn.style.color           = "#39ff14";
-                    reportBtn.style.borderColor     = "rgba(57,255,20,0.4)";
-                    reportBtn.style.textShadow      = "0 0 8px #39ff14";
-                } else {
-                    reportBtn.innerText = "TX_FAILED";
-                    reportBtn.disabled  = false;
+            chrome.storage.local.get(['soc_token'], (res) => {
+                const headers = { 'Content-Type': 'application/json' };
+                if (res.soc_token) {
+                    headers['Authorization'] = `Bearer ${res.soc_token}`;
                 }
-            }).catch(() => {
-                reportBtn.innerText = "NET_ERROR";
-                reportBtn.disabled  = false;
+
+                fetch(`${API_BASE}/report`, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({ url: activeTab.url })
+                }).then(response => {
+                    if (response.ok) {
+                        reportBtn.innerText             = "TX_COMMITTED";
+                        reportBtn.style.background      = "rgba(57,255,20,0.1)";
+                        reportBtn.style.color           = "#39ff14";
+                        reportBtn.style.borderColor     = "rgba(57,255,20,0.4)";
+                        reportBtn.style.textShadow      = "0 0 8px #39ff14";
+                    } else {
+                        reportBtn.innerText = "TX_FAILED";
+                        reportBtn.disabled  = false;
+                    }
+                }).catch(() => {
+                    reportBtn.innerText = "NET_ERROR";
+                    reportBtn.disabled  = false;
+                });
             });
         });
     });

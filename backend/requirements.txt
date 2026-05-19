@@ -1,10 +1,10 @@
 fastapi
 uvicorn
+python-dotenv
 scikit-learn
 sqlalchemy
 psycopg2-binary
 web3
-python-dotenv
 pydantic
 pytest
 httpx
@@ -17,3 +17,9 @@ python-whois
 
 opencv-python-headless
 scikit-image
+dnspython
+pyjwt
+bcrypt
+passlib[bcrypt]
+python-multipart
+xgboost

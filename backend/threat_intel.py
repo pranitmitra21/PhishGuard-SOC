@@ -33,7 +33,7 @@ def check_safe_browsing(url: str) -> dict:
 
     try:
         # We use httpx for synchronous requests (can easily be async if FastAPI is completely async)
-        with httpx.Client(timeout=3.0) as client:
+        with httpx.Client(timeout=2.0) as client:
             response = client.post(f"{SAFE_BROWSING_URL}?key={api_key}", json=payload)
             response.raise_for_status()
             data = response.json()

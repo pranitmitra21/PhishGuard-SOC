@@ -18,6 +18,10 @@ def decode_base64_image(base64_string: str) -> np.ndarray:
     img_data = base64.b64decode(base64_string)
     np_arr = np.frombuffer(img_data, np.uint8)
     img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+    # B12 FIX: imdecode returns None on corrupted/unsupported image data.
+    # Without this guard, calculate_ssim() would crash with a cryptic numpy error.
+    if img is None:
+        raise ValueError("cv2.imdecode returned None: image data is corrupted or in an unsupported format.")
     return img
 
 def calculate_ssim(img1: np.ndarray, img2: np.ndarray) -> float:
@@ -56,6 +60,7 @@ def scan_screenshot(base64_screenshot: str) -> dict:
         ref_path = os.path.join(REFERENCE_DIR, filename)
         ref_img = cv2.imread(ref_path)
         
+        # B12 FIX: imread returns None for unreadable/corrupt files; skip gracefully.
         if ref_img is None:
             continue
             

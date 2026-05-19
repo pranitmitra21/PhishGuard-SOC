@@ -1,12 +1,13 @@
 {
     "manifest_version": 3,
     "name": "PhishGuard SOC",
-    "version": "2.0",
+    "version": "2.3",
     "description": "Real-time phishing detection with ML, blockchain logging, and threat intelligence.",
     "permissions": [
         "activeTab",
         "scripting",
-        "tabs"
+        "tabs",
+        "storage"
     ],
     "host_permissions": [
         "*://*/*"

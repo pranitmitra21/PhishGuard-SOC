@@ -1,6 +1,17 @@
 // background.js - PhishGuard SOC v2.0
 
-const API_URL = "http://127.0.0.1:8000/detect";
+const API_URL = "http://127.0.0.1:8000/api/detect";
+
+// Unique session ID stored in memory to identify the current active browser instance.
+// Using chrome.storage.session ensures it persists across service worker wake/sleep cycles
+// but is completely wiped when the Chrome browser is closed.
+async function getSessionId() {
+    const data = await chrome.storage.session.get('sessionId');
+    if (data.sessionId) return data.sessionId;
+    const newId = crypto.randomUUID();
+    await chrome.storage.session.set({ sessionId: newId });
+    return newId;
+}
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "analyze_current_tab") {
@@ -60,10 +71,24 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 });
 
-function callAPI(features, sendResponse) {
+async function callAPI(features, sendResponse) {
+    features.session_id = await getSessionId(); // Attach the session ID to every request
+    
+    // Get optional auth token for multi-tenancy isolation safely
+    const soc_token = await new Promise((resolve) => {
+        chrome.storage.local.get(['soc_token'], (res) => {
+            resolve(res.soc_token);
+        });
+    });
+    
+    const headers = { 'Content-Type': 'application/json' };
+    if (soc_token) {
+        headers['Authorization'] = `Bearer ${soc_token}`;
+    }
+
     fetch(API_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: headers,
         body: JSON.stringify(features)
     })
     .then(response => {
@@ -82,9 +107,9 @@ function callAPI(features, sendResponse) {
                     sendResponse(data); 
                     return;
                 }
-                fetch("http://127.0.0.1:8000/vision-scan", {
+                fetch("http://127.0.0.1:8000/api/vision-scan", {
                     method: "POST",
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: headers,
                     body: JSON.stringify({ url: features.url, screenshot_base64: dataUrl })
                 })
                 .then(r => r.json())
@@ -112,36 +137,63 @@ function callAPI(features, sendResponse) {
 
 // Auto-scan logic: runs securely on page load without needing a popup click!
 function autoScanTab(tabId, tabUrl) {
-    if (tabUrl.startsWith("chrome") || tabUrl.startsWith("about:") || tabUrl.startsWith("edge:") || tabUrl.startsWith("file:")) return;
-    
-    // We send a lightweight extraction ping
-    chrome.tabs.sendMessage(tabId, { action: "extract_features" }, function(features) {
-        if (chrome.runtime.lastError || !features) {
-            // Need to inject content.js if it hasn't loaded 
-            chrome.scripting.executeScript({ target: { tabId: tabId }, files: ['content.js'] }).then(() => {
-                setTimeout(() => {
-                    chrome.tabs.sendMessage(tabId, { action: "extract_features" }, function(newFeatures) {
-                        if(newFeatures && !chrome.runtime.lastError) processAndInject(newFeatures, tabId);
-                    });
-                }, 200);
-            }).catch(e => console.error("Background injection err:", e));
-        } else {
-            processAndInject(features, tabId);
-        }
-    });
+    // Skip internal, extension, and file pages
+    if (!tabUrl || 
+        tabUrl.startsWith("chrome") || 
+        tabUrl.startsWith("about:") || 
+        tabUrl.startsWith("edge:") || 
+        tabUrl.startsWith("file:") ||
+        tabUrl.startsWith("chrome-extension:")) return;
+
+    // Wait 200ms for the content script listener to fully register.
+    // Content.js is injected by the manifest so its onMessage listener is ready
+    // almost immediately after DOM load — 200ms is a safe margin (was 600ms).
+    setTimeout(() => {
+        chrome.tabs.sendMessage(tabId, { action: "extract_features" }, function(features) {
+            if (chrome.runtime.lastError) {
+                // Content script may still not be ready (e.g. page blocked scripting)
+                // Silently skip — user can still manually scan via popup
+                return;
+            }
+            if (features) {
+                processAndInject(features, tabId);
+            }
+        });
+    }, 200);
 }
 
 function processAndInject(features, tabId) {
+    // PHASE 1: If quick local check flags the page, show amber scanning overlay IMMEDIATELY
+    if (features._quick_suspicious) {
+        chrome.tabs.get(tabId, (tab) => {
+            if (!chrome.runtime.lastError && tab) {
+                chrome.tabs.sendMessage(tabId, { action: "inject_pending_overlay" });
+            }
+        });
+    }
+
     callAPI(features, (data) => {
         if (data && (data.status === "Phishing" || data.status === "Suspicious")) {
-            chrome.tabs.sendMessage(tabId, { action: "inject_overlay", data: data });
+            // Re-check tab still exists before injecting overlay
+            chrome.tabs.get(tabId, (tab) => {
+                if (chrome.runtime.lastError || !tab) return;
+                // PHASE 2: Replace pending overlay with final verdict (or inject fresh)
+                chrome.tabs.sendMessage(tabId, { action: "update_overlay", data: data });
+            });
+        } else if (data && data.status === "Safe") {
+            // Remove any pending scanning overlay if the site turns out safe
+            chrome.tabs.get(tabId, (tab) => {
+                if (chrome.runtime.lastError || !tab) return;
+                chrome.tabs.sendMessage(tabId, { action: "update_overlay", data: data });
+            });
         }
     });
 }
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-    // We trigger the scan once the DOM completes
+    // Trigger auto-scan the moment DOM is fully loaded
     if (changeInfo.status === 'complete' && tab.url) {
         autoScanTab(tabId, tab.url);
     }
 });
+

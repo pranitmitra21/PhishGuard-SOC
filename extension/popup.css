@@ -15,7 +15,7 @@
 * { box-sizing: border-box; }
 
 body {
-    width: 360px;
+    width: 400px;
     min-height: 520px;
     font-family: 'Share Tech Mono', monospace;
     margin: 0;
@@ -116,6 +116,13 @@ header {
     background: var(--cyber-green);
     box-shadow: 0 0 8px var(--cyber-green);
     animation: blink 2s infinite;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.status-dot:hover {
+    transform: scale(1.5);
+    background: var(--cyber-pink) !important;
+    box-shadow: 0 0 12px var(--cyber-pink) !important;
 }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
@@ -300,7 +307,7 @@ header {
 }
 
 .intel-value {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: bold;
     color: #f8fafc;
     letter-spacing: 0.05em;
@@ -470,3 +477,20 @@ header {
 ::-webkit-scrollbar-track { background: var(--cyber-void); }
 ::-webkit-scrollbar-thumb { background: var(--cyber-cyan); border-radius: 0; }
 ::-webkit-scrollbar-thumb:hover { background: var(--cyber-pink); }
+
+/* ---- Auth Inputs ---- */
+.auth-input {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--cyber-border);
+    padding: 10px;
+    color: var(--cyber-cyan);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.8rem;
+    outline: none;
+    transition: all 0.2s ease;
+}
+.auth-input:focus {
+    border-color: var(--cyber-cyan);
+    box-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
+}

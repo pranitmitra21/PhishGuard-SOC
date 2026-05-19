@@ -9,6 +9,29 @@ on:
 jobs:
   backend-test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: admin
+          POSTGRES_PASSWORD: admin123
+          POSTGRES_DB: phishing_logs
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python 3.11
@@ -21,10 +44,14 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     - name: Test backend with pytest
-      # Currently a placeholder until actual test files are written
+      env:
+        DATABASE_URL: postgresql://admin:admin123@localhost:5432/phishing_logs
+        REDIS_URL: redis://localhost:6379/0
+        JWT_SECRET: test_secret_key_123
+        ADMIN_SECURE_PIN: TEST_PIN_123
       run: |
         cd backend
-        python -m pytest || echo "Warning: Tests generated no result (No actual tests created yet). Assuming pass."
+        python -m pytest tests/ -v
 
   frontend-build:
     runs-on: ubuntu-latest
@@ -42,3 +69,10 @@ jobs:
       run: |
         cd frontend
         npm run build
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build Docker Compose
+      run: docker-compose build
