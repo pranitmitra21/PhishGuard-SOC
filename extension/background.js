@@ -174,6 +174,15 @@ function processAndInject(features, tabId) {
     }
 
     callAPI(features, (data) => {
+        if (data && data.error) {
+            // Fail open if the backend server is down, so we don't break the user's browsing experience
+            chrome.tabs.get(tabId, (tab) => {
+                if (chrome.runtime.lastError || !tab) return;
+                chrome.tabs.sendMessage(tabId, { action: "update_overlay", data: { status: "Safe" } });
+            });
+            return;
+        }
+
         if (data && (data.status === "Phishing" || data.status === "Suspicious")) {
             // Re-check tab still exists before injecting overlay
             chrome.tabs.get(tabId, (tab) => {
