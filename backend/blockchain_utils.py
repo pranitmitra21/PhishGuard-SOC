@@ -93,13 +93,14 @@ def log_to_blockchain(url_hash: str, features_dict: dict = None):
     # Use estimate_gas() instead of a hardcoded 2,000,000 which was 8x too large.
     # Add a 20% buffer for safety against estimation variance.
     try:
-        estimated_gas = contract.functions.addLog(url_hash, ipfs_hash, threat_details_json).estimate_gas({'from': account.address})
+        url_arg = features_dict.get("url", "unknown") if features_dict else "unknown"
+        estimated_gas = contract.functions.addLog(url_arg, url_hash, ipfs_hash, threat_details_json).estimate_gas({'from': account.address})
         gas_limit = int(estimated_gas * 1.2)
     except Exception as e:
         print(f"[Blockchain] Gas estimation failed ({e}), falling back to 300,000")
         gas_limit = 300_000  # Reasonable fallback based on measured 252,338
 
-    tx = contract.functions.addLog(url_hash, ipfs_hash, threat_details_json).build_transaction({
+    tx = contract.functions.addLog(url_arg, url_hash, ipfs_hash, threat_details_json).build_transaction({
         'from': account.address,
         'nonce': nonce,
         'gas': gas_limit,
