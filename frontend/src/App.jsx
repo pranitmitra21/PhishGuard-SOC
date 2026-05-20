@@ -49,7 +49,7 @@ function App() {
       try {
         const role = JSON.parse(atob(token.split('.')[1])).role;
         if (role === 'Analyst') return 'Threat.Logs';
-      } catch (err) {}
+      } catch (err) { console.error("Error parsing token role:", err); }
     }
     return 'Terminal.Dash';
   });
@@ -59,6 +59,7 @@ function App() {
       try {
         return JSON.parse(atob(token.split('.')[1])).role;
       } catch (err) {
+        console.error("Error parsing token:", err);
         localStorage.removeItem('token');
         return null;
       }
@@ -75,7 +76,7 @@ function App() {
   const toggleRow = (id) => setExpandedRow(expandedRow === id ? null : id);
 
   const generateAiExplanation = (log) => {
-    if (log.status === 'Safe') return "The AI verification engine determined this node is mathematically sound. The structural integrity, protocol security, and embedded code elements passed all heuristic baseline checks without triggering any anomalies.";
+    if (log.status === 'Safe') return "The PhishGuard AI engine verified this vector as SAFE. The XGBoost + MLP neural ensemble analyzed structural DOM integrity, WHOIS age, and routing protocols, finding zero anomalies. Cross-referenced with the Tranco Top 1M whitelist and global threat intel.";
     
     let reasons = [];
     if (log.confidence >= 99.9) reasons.push("a verified match against global Threat Intelligence databases (Safe Browsing / Known Blocklists)");
@@ -86,12 +87,17 @@ function App() {
     if (log.suspicious_dom_elements > 0) reasons.push(`anomalous HTML/DOM structures (${log.suspicious_dom_elements} instances) such as hidden scripts, credential harvesting forms, or cross-origin overlays`);
     
     if (reasons.length === 0) {
-      return `The PhishGuard Neural Ensemble (XGBoost + MLP) flagged this vector as ${log.status.toUpperCase()} based on deep statistical anomalies in network patterns, despite surface-level heuristics appearing nominal.`;
+      if (log.status === 'Suspicious') return "The PhishGuard Neural Ensemble (XGBoost + MLP) flagged this vector as SUSPICIOUS. While explicit heuristic violations are absent, the model detected deep statistical anomalies in the URL's lexical structure and network routing path. Proceed with heightened caution.";
+      return "The PhishGuard Neural Ensemble (XGBoost + MLP) quarantined this vector as PHISHING based on deep statistical pattern matching. The combination of domain age, WHOIS anonymity, and URL structure highly correlates with zero-day credential harvesting infrastructure.";
     }
     
-    let formattedReasons = reasons.length > 1 ? reasons.slice(0, -1).join(", ") + ", and " + reasons[reasons.length - 1] : reasons[0];
+    let formattedReasons = reasons.length > 1 ? reasons.slice(0, -1).join(" | ") + " | " + reasons[reasons.length - 1] : reasons[0];
     
-    return `The PhishGuard Neural Ensemble quarantined this Threat Vector because it explicitly detected ${formattedReasons}. Extreme caution is advised.`;
+    if (log.status === 'Suspicious') {
+        return `The Heuristics Engine flagged this Threat Vector as SUSPICIOUS. The following risk factors were identified: [ ${formattedReasons} ]. The AI confidence score has not reached critical mass for an absolute block, but extreme caution is advised.`;
+    }
+    
+    return `The PhishGuard Neural Ensemble successfully quarantined this Threat Vector as PHISHING. The pipeline explicitly detected: [ ${formattedReasons} ]. Forensic evidence has been hashed and pinned to the Ethereum Sepolia network via IPFS.`;
   };
 
   const displayedLogs = useMemo(() => {

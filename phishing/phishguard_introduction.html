@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phishguard Introduction</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background-color: #f9fafb;
+        }
+        .container {
+            background: #ffffff;
+            padding: 50px;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: #111827;
+            margin-top: 2em;
+            margin-bottom: 0.5em;
+            font-weight: 700;
+        }
+        h1 { font-size: 2.25rem; border-bottom: 2px solid #e5e7eb; padding-bottom: 0.3em; margin-top: 0; }
+        h2 { font-size: 1.875rem; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.3em; }
+        h3 { font-size: 1.5rem; }
+        p { margin-bottom: 1.25em; }
+        a { color: #2563eb; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        code {
+            background-color: #f3f4f6;
+            padding: 0.2em 0.4em;
+            border-radius: 6px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.875em;
+        }
+        pre {
+            background-color: #1f2937;
+            color: #f9fafb;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        pre code {
+            background-color: transparent;
+            color: inherit;
+            padding: 0;
+        }
+        blockquote {
+            border-left: 4px solid #3b82f6;
+            padding-left: 1rem;
+            color: #4b5563;
+            margin-left: 0;
+            background-color: #eff6ff;
+            padding: 1rem;
+            border-radius: 0 8px 8px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2em 0;
+        }
+        th, td {
+            padding: 0.75rem 1rem;
+            border: 1px solid #e5e7eb;
+            text-align: left;
+        }
+        th {
+            background-color: #f9fafb;
+            font-weight: 600;
+        }
+        tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+        hr {
+            border: 0;
+            height: 1px;
+            background: #e5e7eb;
+            margin: 3em 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>PhishGuard SOC — Project Introduction</h1>
+<h2>Overview</h2>
+<p><strong>PhishGuard SOC</strong> is a full-stack, industry-grade
+cybersecurity platform designed to detect, analyze, and log phishing
+URLs in real time. Built as a B.Tech capstone project, it goes far
+beyond a standard student submission — integrating Machine Learning,
+Computer Vision, Blockchain immutability, Threat Intelligence APIs, and
+a Security Operations Center (SOC) dashboard into one cohesive
+system.</p>
+<p>The project name stands for <strong>Phishing Guard – Security
+Operations Center</strong>, and it functions like a real enterprise
+threat detection gateway that a company’s security team would use to
+monitor and respond to web-based attacks.</p>
+<hr />
+<h2>Project Goals</h2>
+<ol>
+<li><strong>Detect phishing URLs</strong> before users can be harmed —
+   in real time, directly in the browser.</li>
+<li><strong>Provide explainability</strong> — tell the user <em>why</em>
+   a site was flagged (not just a score).</li>
+<li><strong>Create an immutable audit trail</strong> of all confirmed
+   phishing threats on a blockchain.</li>
+<li><strong>Continuously improve</strong> through an automated MLOps
+   retraining pipeline fed by user reports.</li>
+<li><strong>Present threat data</strong> to security analysts via a
+   professional SOC dashboard.</li>
+</ol>
+<hr />
+<h2>System Architecture</h2>
+<p>The system is composed of <strong>5 major components</strong> working
+together:</p>
+<pre><code>┌─────────────────────────────────────────────────────────────────┐
+│                        PhishGuard SOC                          │
+│                                                                  │
+│  ┌───────────────┐     ┌──────────────┐     ┌──────────────┐   │
+│  │ Chrome        │────▶│ FastAPI      │────▶│ PostgreSQL   │   │
+│  │ Extension     │     │ Backend      │     │ Database     │   │
+│  │ (Manifest V3) │◀────│ (Python)     │     │              │   │
+│  └───────────────┘     └──────┬───────┘     └──────────────┘   │
+│                               │                                  │
+│                    ┌──────────┼──────────────────┐              │
+│                    ▼          ▼                   ▼              │
+│            ┌──────────┐ ┌──────────┐      ┌──────────────┐     │
+│            │ ML Engine│ │ Redis    │      │ Blockchain   │     │
+│            │(Random   │ │ Cache    │      │ (Ethereum Sepolia Testnet/    │     │
+│            │ Forest)  │ │          │      │  Solidity)   │     │
+│            └──────────┘ └──────────┘      └──────────────┘     │
+│                                                                  │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │           React SOC Dashboard (Vite + TailwindCSS)        │  │
+│  └───────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre>
+<hr />
+<h2>Component Breakdown</h2>
+<h3>1. 🧩 Chrome Extension (<code>/extension</code>)</h3>
+<p>The entry point for all URL scanning. Built using the
+<strong>Manifest V3</strong> standard.</p>
+<ul>
+<li><strong><code>content.js</code></strong> — Injected into every
+  webpage. Extracts rich DOM features:</li>
+<li>URL length, presence of <code>@</code> symbol, subdomain count,
+    HTTPS status</li>
+<li><strong>Deep DOM Analysis</strong>: Detects if password forms submit
+    to a cross-origin domain (“Zero-Click Theft”)</li>
+<li>Detects hidden/invisible <code>&lt;iframe&gt;</code> elements
+    (classic phishing trick)</li>
+<li>Counts password input fields</li>
+<li><strong><code>background.js</code></strong> — Service worker that
+  receives extracted features and sends them to the backend API.</li>
+<li><strong><code>popup.js</code> / <code>popup.html</code></strong> — A
+  full UI inside the extension popup showing the scan result, confidence
+  score, and AI-generated reasons.</li>
+<li><strong><code>content.js</code> (Overlay Injector)</strong> — When a
+  site is confirmed as Phishing, injects a <strong>full-screen
+  cyberpunk-styled red warning</strong> that blocks the page with
+  explainable AI reasons listed clearly.</li>
+</ul>
+<hr />
+<h3>2. ⚙️ FastAPI Backend (<code>/backend</code>)</h3>
+<p>The core processing engine. A high-performance Python REST API
+running on <strong>FastAPI + Uvicorn</strong>.</p>
+<h4>Detection Pipeline (<code>/detect</code> endpoint)</h4>
+<p>URL scanning follows a <strong>5-tier waterfall decision
+system</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Check</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1</strong></td>
+<td>Tranco Whitelist</td>
+<td>O(1) in-memory set lookup — top 1 million legitimate domains. Instant <code>Safe</code> verdict.</td>
+</tr>
+<tr>
+<td><strong>2</strong></td>
+<td>WHOIS Domain Age</td>
+<td>Queries domain registration age. Brand-new domains (&lt;30 days) are high risk; older domains are discounted.</td>
+</tr>
+<tr>
+<td><strong>3</strong></td>
+<td>Redis Cache</td>
+<td>Previous results are cached for 1 hour — zero inference cost on repeat scans.</td>
+</tr>
+<tr>
+<td><strong>3.5</strong></td>
+<td>Google Safe Browsing API</td>
+<td>Queries Google’s threat intelligence database before running local ML. If Google flags it, it’s immediately blocked at 100% confidence.</td>
+</tr>
+<tr>
+<td><strong>4</strong></td>
+<td>XGBoost + MLP Ensemble ML Model</td>
+<td>Local scikit-learn model runs inference to generate a base threat score from 6 URL/DOM features.</td>
+</tr>
+<tr>
+<td><strong>4.5</strong></td>
+<td>Lexical Heuristics Engine</td>
+<td>Advanced text analysis layer (see below).</td>
+</tr>
+<tr>
+<td><strong>5</strong></td>
+<td>Multi-Layer Decision Engine</td>
+<td>Combines all scores into a <code>final_confidence</code> and assigns a final status of <code>Safe</code>, <code>Suspicious</code>, or <code>Phishing</code>.</td>
+</tr>
+</tbody>
+</table>
+<h4>Final Verdict Thresholds</h4>
+<ul>
+<li><code>≥ 80%</code> confidence → <strong>Phishing</strong> (blocked,
+  logged to blockchain)</li>
+<li><code>40%–79%</code> confidence → <strong>Suspicious</strong>
+  (warning shown)</li>
+<li><code>&lt; 40%</code> confidence → <strong>Safe</strong></li>
+</ul>
+<hr />
+<h3>3. 🤖 Machine Learning Engine (<code>/backend/ml</code>)</h3>
+<p>The intelligence core of PhishGuard.</p>
+<h4>Model</h4>
+<ul>
+<li><strong>Algorithm</strong>: XGBoost + Multi-Layer Perceptron (MLP) Ensemble
+  (scikit-learn)</li>
+<li><strong>Model file</strong>: <code>xgboost_mlp_model.pkl</code> (~12 MB
+  trained model)</li>
+<li><strong>Input Features</strong>: 6 structured features extracted
+  from URL and DOM</li>
+<li><code>url_length</code> — Phishing URLs tend to be very long</li>
+<li><code>has_at_symbol</code> — <code>@</code> in a URL can redirect to
+     a different host</li>
+<li><code>num_subdomains</code> — Excessive subdomains are a red
+     flag</li>
+<li><code>is_https</code> — Absence of HTTPS on login pages is
+     suspicious</li>
+<li><code>num_redirects</code> — Multiple redirects indicate
+     obfuscation</li>
+<li><code>suspicious_dom_elements</code> — Count of dangerous DOM
+     patterns</li>
+<li><strong>Output</strong>: Probability distribution across 3 classes
+  (<code>Safe</code>, <code>Suspicious</code>, <code>Phishing</code>).
+  These are combined into a <strong>threat score 0–100</strong>.</li>
+</ul>
+<h4>Lexical Heuristics Engine (<code>heuristics.py</code>)</h4>
+<p>A sophisticated rule-based analysis layer that catches URL tricks the
+ML model alone can’t see:</p>
+<table>
+<thead>
+<tr>
+<th>Check</th>
+<th>How it Works</th>
+<th>Risk Added</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Shannon Entropy</strong></td>
+<td>Measures randomness of hostname. High randomness = DGA (bot-generated) domain.</td>
+<td>+20 points</td>
+</tr>
+<tr>
+<td><strong>Typosquatting Detection</strong></td>
+<td>Levenshtein distance algorithm checks if domain is 1-2 characters away from 20 major brands (Google, PayPal, Microsoft, etc.). Also catches character swaps like <code>0→o</code>, <code>1→l</code>.</td>
+<td>+40 points</td>
+</tr>
+<tr>
+<td><strong>Brand in Subdomain</strong></td>
+<td>Checks if a major brand name appears in the subdomain (e.g., <code>paypal.secure-login.xyz</code>).</td>
+<td>+35 points</td>
+</tr>
+<tr>
+<td><strong>Suspicious Keywords</strong></td>
+<td>Counts phishing keywords (<code>login</code>, <code>verify</code>, <code>secure</code>, <code>billing</code>, <code>refund</code>, <code>gift</code>, etc.) in the URL.</td>
+<td>+10 per keyword</td>
+</tr>
+</tbody>
+</table>
+<h4>MLOps Retraining Pipeline (<code>retrain_pipeline.py</code>)</h4>
+<ul>
+<li>User-reported phishing URLs (via <code>/report</code> endpoint) are
+  stored in the database.</li>
+<li>The <code>/admin/retrain</code> endpoint triggers a
+  <strong>background retraining job</strong> that:</li>
+<li>Fetches all <code>User_Reported_Phishing</code> records from the
+     database</li>
+<li>Appends them to the training CSV as labeled <code>Phishing</code>
+     samples</li>
+<li>Retrains the XGBoost + MLP Ensemble model on the expanded dataset</li>
+<li>Hot-reloads the new <code>xgboost_mlp_model.pkl</code> into memory with
+     <strong>zero downtime</strong></li>
+</ul>
+<hr />
+<h3>4. 👁️ Visual AI / Computer Vision Engine (<code>vision_engine.py</code>)</h3>
+<p>A zero-day phishing detection capability that catches attacks that
+bypass URL scanners entirely (e.g., using a legitimate compromised
+domain).</p>
+<ul>
+<li><strong>Triggered by</strong>: Chrome extension capturing a
+  screenshot when a password form is detected</li>
+<li><strong>API Endpoint</strong>: <code>POST /vision-scan</code>
+  accepts base64-encoded screenshot</li>
+<li><strong>Algorithm</strong>: <strong>SSIM (Structural Similarity
+  Index)</strong> from <code>scikit-image</code> + OpenCV</li>
+<li>Decodes the base64 screenshot into an OpenCV image matrix</li>
+<li>Resizes and converts to grayscale both images</li>
+<li>Computes SSIM score (0.0 = completely different, 1.0 = identical)
+     against every image in the <code>/reference_images/</code>
+     directory</li>
+<li>If any match exceeds <strong>80% similarity</strong> → the page is a
+     UI clone of a known brand</li>
+<li><strong>Result</strong>: Returns <code>is_clone</code>,
+  <code>matched_brand</code>, and <code>similarity_score</code></li>
+<li><strong>Purpose</strong>: If a phishing site visually mimics
+  “Microsoft Login” but the domain isn’t <code>microsoft.com</code>, it’s
+  immediately flagged regardless of URL analysis</li>
+</ul>
+<hr />
+<h3>5. ⛓️ Blockchain Audit Trail (<code>/blockchain</code>)</h3>
+<p>Confirmed phishing URLs are permanently logged to a local
+<strong>Ethereum blockchain</strong> (using Ethereum Sepolia Testnet for development) via
+a Solidity smart contract.</p>
+<h4>Smart Contract: <code>ThreatLog.sol</code></h4>
+<pre><code>struct PhishingLog {
+    string urlHash;    // SHA256 hash of the URL (privacy-preserving)
+    string ipfsHash;   // IPFS CID pointing to full evidence package
+    uint256 timestamp;
+    address reporter;
+}
+</code></pre>
+<ul>
+<li><strong><code>addLog(urlHash, ipfsHash)</code></strong> — Records
+  the SHA256 URL hash and IPFS evidence link on-chain</li>
+<li><strong><code>isLogged(urlHash)</code></strong> — Checks if a URL
+  has already been reported (prevents duplicate transactions)</li>
+<li><strong>IPFS Integration</strong>: Evidence packages (DOM features,
+  screenshots) are designed to be pinned to IPFS via Pinata, making the
+  audit trail fully decentralized</li>
+<li><strong>Async by design</strong>: Blockchain logging runs as a
+  <strong>FastAPI background task</strong> so the 2–10 second Ethereum
+  transaction latency never blocks the user-facing response</li>
+</ul>
+<blockquote>
+<p>[!IMPORTANT] The blockchain provides <strong>tamper-proof
+immutability</strong> — once a phishing URL is logged, no one (including
+the system admins) can alter or delete that record. This is a key
+enterprise security property.</p>
+</blockquote>
+<hr />
+<h3>6. 🗄️ Data Layer</h3>
+<h4>PostgreSQL Database (<code>/backend/database.py</code>, <code>models.py</code>)</h4>
+<p>Stores every scan result with full feature vectors: - URL, SHA256
+hash, detection status, confidence score - All 6 ML features for audit
+and retraining - Blockchain logging status, timestamp</p>
+<h4>Redis Cache</h4>
+<ul>
+<li>URL scan results cached for <strong>1 hour</strong> to skip repeat
+  inference</li>
+<li>User-reported URLs cached for <strong>24 hours</strong></li>
+<li>Connection via Docker container (<code>redis:alpine</code>)</li>
+</ul>
+<h4>Training Datasets (<code>/merged_all_rows_dataset</code>)</h4>
+<p>The XGBoost + MLP Ensemble model was trained on <strong>~98.5 MB merged
+dataset</strong> combining: | Dataset | Size | Description |
+|———|——|————-| | <code>PhiUSIIL_Phishing_URL_Dataset.csv</code> | ~54 MB
+| Academic phishing URL dataset | | <code>malicious_phish.csv</code> |
+~44 MB | Real-world malicious URL collection | |
+<code>merged_all_rows_dataset.csv</code> | ~98 MB | Combined,
+deduplicated master dataset |</p>
+<p>The processed and feature-engineered version is stored as
+<code>processed_features.csv</code> (~7.7 MB) in the <code>ml/</code>
+directory.</p>
+<p>Additionally, <code>tranco.txt</code> (~15 MB) contains the
+<strong>Tranco Top 1 Million</strong> legitimate domain whitelist loaded
+into memory at startup for O(1) safe-domain verification.</p>
+<hr />
+<h3>7. 🖥️ SOC Dashboard Frontend (<code>/frontend</code>)</h3>
+<p>A <strong>React + Vite</strong> application styled with TailwindCSS,
+designed to look like a professional Security Operations Center
+interface.</p>
+<ul>
+<li><strong>Real-time Threat Statistics</strong>: Total scans, phishing
+  detected, suspicious URLs, safe URLs</li>
+<li><strong>Detection Log Table</strong>: Scrollable live feed of all
+  scanned URLs with status indicators</li>
+<li><strong>7-Day Security Score Chart</strong>: Line graph showing the
+  ratio of safe to total scans per day (using Recharts)</li>
+<li><strong>Global Search</strong>: Search across all logged URL
+  history</li>
+<li><strong>Model Accuracy Display</strong>: Shows current XGBoost+MLP model
+  accuracy and false positive rate</li>
+<li><strong>Served via Nginx</strong> inside Docker in production</li>
+</ul>
+<hr />
+<h2>Infrastructure &amp; Deployment</h2>
+<p>The entire application is <strong>containerized with Docker
+Compose</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Container</th>
+<th>Image</th>
+<th>Port</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>phishing_db</code></td>
+<td><code>postgres:15-alpine</code></td>
+<td>5432</td>
+<td>Persistent threat log database</td>
+</tr>
+<tr>
+<td><code>phishing_redis</code></td>
+<td><code>redis:alpine</code></td>
+<td>6379</td>
+<td>Result cache</td>
+</tr>
+<tr>
+<td><code>phishing_backend</code></td>
+<td>Custom Python build</td>
+<td>8000</td>
+<td>FastAPI API server</td>
+</tr>
+<tr>
+<td><code>phishing_frontend</code></td>
+<td>Custom Nginx build</td>
+<td>80</td>
+<td>Static React SOC dashboard</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong><code>START_ALL.bat</code></strong> — Windows batch script
+  that starts the entire stack with one click</li>
+<li><strong>Health checks</strong> on DB and Redis ensure the backend
+  doesn’t start until dependencies are ready</li>
+<li><strong><code>.github/</code></strong> — GitHub Actions CI/CD
+  workflows configured for automated testing and deployment</li>
+</ul>
+<hr />
+<h2>Technology Stack Summary</h2>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Technology</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ML Model</td>
+<td>scikit-learn (XGBoost + MLP Ensemble)</td>
+</tr>
+<tr>
+<td>Computer Vision</td>
+<td>OpenCV + scikit-image (SSIM)</td>
+</tr>
+<tr>
+<td>Heuristics</td>
+<td>Custom Python (Shannon Entropy, Levenshtein Distance)</td>
+</tr>
+<tr>
+<td>Backend API</td>
+<td>FastAPI + Uvicorn (Python 3)</td>
+</tr>
+<tr>
+<td>Threat Intel</td>
+<td>Google Safe Browsing API v4</td>
+</tr>
+<tr>
+<td>WHOIS</td>
+<td><code>python-whois</code> library</td>
+</tr>
+<tr>
+<td>Blockchain</td>
+<td>Solidity + Ethereum Sepolia Testnet + Web3.py</td>
+</tr>
+<tr>
+<td>Database</td>
+<td>PostgreSQL (SQLAlchemy ORM)</td>
+</tr>
+<tr>
+<td>Cache</td>
+<td>Redis</td>
+</tr>
+<tr>
+<td>Frontend</td>
+<td>React + Vite + TailwindCSS + Recharts</td>
+</tr>
+<tr>
+<td>Browser Extension</td>
+<td>Chrome Extension Manifest V3</td>
+</tr>
+<tr>
+<td>Deployment</td>
+<td>Docker Compose + Nginx</td>
+</tr>
+<tr>
+<td>Domain Whitelist</td>
+<td>Tranco Top 1M (in-memory set)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>Key Differentiating Features</h2>
+<ol>
+<li><strong>Explainable AI (XAI)</strong>: Every phishing verdict
+   comes with human-readable reasons (e.g., <em>“Typosquatting detected
+   (mimicking ‘paypal’)”</em>, <em>“Brand name ‘google’ used deceptively in
+   subdomain”</em>). The reasons are displayed both in the extension popup
+   and as a full-screen browser overlay.</li>
+<li><strong>Multi-Layer Defense</strong>: No single point of failure.
+   If Google Safe Browsing is down → ML engine runs. If ML confidence is
+   low → heuristics compensate. If the domain is brand-new → WHOIS age
+   multiplies risk.</li>
+<li><strong>Zero-Day Visual Detection</strong>: Catches phishing
+   attacks that hide behind legitimate URLs by comparing page screenshots
+   to known brand login pages.</li>
+<li><strong>Continuous Learning</strong>: The system gets smarter
+   over time — user reports feed directly into the retraining pipeline,
+   creating a feedback loop.</li>
+<li><strong>Immutable Blockchain Audit</strong>: Confirmed threats
+   are permanently recorded on-chain with IPFS evidence, ensuring
+   compliance and tamper-proof logging.</li>
+<li><strong>Production-Ready Architecture</strong>: Full Docker
+   Compose deployment, Redis caching, async background tasks, health
+   checks, and Nginx reverse proxy.</li>
+</ol>
+    </div>
+</body>
+</html>

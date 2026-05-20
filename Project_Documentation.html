@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhishGuard: Comprehensive B.Tech Project & Thesis Documentation</title>
+    <style>
+        :root {
+            --primary-bg: #0d1117;
+            --secondary-bg: #161b22;
+            --text-primary: #c9d1d9;
+            --text-secondary: #8b949e;
+            --accent: #58a6ff;
+            --accent-glow: rgba(88, 166, 255, 0.4);
+            --danger: #f85149;
+            --success: #3fb950;
+            --warning: #d29922;
+            --border: #30363d;
+            --box-bg: #010409;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background-color: var(--primary-bg);
+            color: var(--text-primary);
+            line-height: 1.8;
+            margin: 0;
+            padding: 0;
+            font-size: 16px;
+        }
+
+        header {
+            background-color: var(--secondary-bg);
+            padding: 60px 20px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            background-image: linear-gradient(180deg, rgba(13,17,23,1) 0%, rgba(22,27,34,1) 100%);
+        }
+
+        h1 {
+            color: #ffffff;
+            font-size: 3.5em;
+            margin-bottom: 15px;
+            text-shadow: 0 0 25px var(--accent-glow);
+            letter-spacing: -1px;
+        }
+        
+        h2 {
+            color: var(--accent);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 10px;
+            margin-top: 60px;
+            font-size: 2.2em;
+            letter-spacing: -0.5px;
+        }
+
+        h3 {
+            color: #ffffff;
+            margin-top: 40px;
+            font-size: 1.6em;
+            border-left: 4px solid var(--accent);
+            padding-left: 15px;
+        }
+
+        h4 {
+            color: #e6edf3;
+            margin-top: 25px;
+            font-size: 1.2em;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .card {
+            background-color: var(--secondary-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 35px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .abstract {
+            font-size: 1.15em;
+            font-style: italic;
+            color: var(--text-secondary);
+            text-align: justify;
+            margin: 0 auto 40px auto;
+            max-width: 900px;
+            padding: 20px;
+            border-left: 4px solid var(--warning);
+            background-color: rgba(210, 153, 34, 0.1);
+            border-radius: 0 8px 8px 0;
+        }
+
+        code {
+            background-color: rgba(110, 118, 129, 0.4);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #79c0ff;
+        }
+
+        pre {
+            background-color: var(--box-bg);
+            padding: 25px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            overflow-x: auto;
+            color: #e6edf3;
+            font-size: 0.95em;
+            line-height: 1.5;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .scenario-box {
+            background-color: rgba(63, 185, 80, 0.05);
+            border: 1px solid rgba(63, 185, 80, 0.3);
+            border-left: 6px solid var(--success);
+            padding: 25px;
+            margin: 25px 0;
+            border-radius: 8px;
+            font-size: 1.05em;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .math-box {
+            background-color: rgba(88, 166, 255, 0.05);
+            border: 1px solid rgba(88, 166, 255, 0.3);
+            border-left: 6px solid var(--accent);
+            padding: 25px;
+            margin: 25px 0;
+            border-radius: 8px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.1em;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        ul, ol {
+            padding-left: 30px;
+            margin-bottom: 20px;
+        }
+
+        li {
+            margin-bottom: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px 0;
+            font-size: 0.95em;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        th, td {
+            border: 1px solid var(--border);
+            padding: 15px;
+            text-align: left;
+        }
+
+        th {
+            background-color: var(--box-bg);
+            color: #ffffff;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        tr:nth-child(even) {
+            background-color: rgba(22, 27, 34, 0.5);
+        }
+
+        .toc {
+            background-color: var(--box-bg);
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin-bottom: 50px;
+        }
+        
+        .toc a {
+            color: var(--text-primary);
+            text-decoration: none;
+            display: block;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+            transition: color 0.2s;
+        }
+        
+        .toc a:hover {
+            color: var(--accent);
+            text-decoration: underline;
+        }
+
+        .mermaid {
+            background-color: var(--box-bg);
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            display: flex;
+            justify-content: center;
+            margin: 40px 0;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({startOnLoad:true, theme: 'dark', flowchart: { curve: 'basis' }});</script>
+</head>
+<body>
+
+    <header>
+        <h1>🛡️ PhishGuard</h1>
+        <p style="font-size: 1.5em; color: #fff; margin-bottom: 10px;">Decentralized AI Phishing Detection System</p>
+        <p style="color: var(--text-secondary); font-size: 1.1em;">Complete Thesis & B.Tech Project Documentation (Extended Edition)</p>
+    </header>
+
+    <div class="container">
+        
+        <div class="abstract">
+            <b>Abstract:</b> As cyber threats grow increasingly sophisticated, traditional signature-based detection mechanisms fail to protect users from zero-day phishing campaigns. PhishGuard proposes a novel, end-to-end Threat Intelligence framework. It integrates a latency-optimized browser extension, a hybrid Machine Learning ensemble (XGBoost + Multi-Layer Perceptron) for lexical heuristics, a Computer Vision pipeline (Structural Similarity Index) for UI clone detection, and an Ethereum-based Web3 ledger for decentralized, immutable threat logging.
+        </div>
+
+        <div class="toc">
+            <h3>Table of Contents</h3>
+            <a href="#intro">1. PhishGuard Introduction</a>
+            <a href="#diagram">2. Complete System Flow Diagram</a>
+            <a href="#heuristics">3. Heuristic Mathematics & Feature Extraction</a>
+            <a href="#ml-deepdive">4. Machine Learning Deep Dive: XGBoost & MLP</a>
+            <a href="#flow">5. Comprehensive Flow of Data at Each Layer</a>
+            <a href="#auth-rbac">6. Authentication & Zero-Trust Architecture (RBAC)</a>
+            <a href="#blockchain">7. Web3 Blockchain & Gas Optimization</a>
+            <a href="#deployment">8. Deployment Architecture (Docker & CI/CD)</a>
+            <a href="#future">9. Future Roadmap & Ethical Considerations</a>
+        </div>
+
+        <h2 id="diagram">2. Complete System Flow Diagram</h2>
+        <p>The following flowchart illustrates the complete end-to-end data pipeline from the user's browser, through the AI Engines, and finally into the Ethereum Blockchain.</p>
+        
+        <div class="mermaid">
+        graph TD
+            A[User visits URL] --> B[Chrome Extension / Interceptor]
+            B --> C{DOM & Network Capture}
+            C -->|Base64 Screenshot| D[Vision Engine: SSIM]
+            C -->|URL & Features| E[FastAPI Engine]
+            E --> F[Parallel Heuristics Enrichment]
+            F --> |WHOIS & SSL Lookup| G[Lexical Feature Extraction]
+            G --> H[22-Feature Mathematical Vector]
+            
+            H --> I[XGBoost Classifier]
+            H --> J[MLP Neural Network]
+            
+            I --> K[Ensemble Averaging Algorithm]
+            J --> K
+            
+            D --> L[Vision Similarity Score > 80%]
+            K --> M[ML Threat Score > 80%]
+            
+            L --> N{Threat Detected?}
+            M --> N
+            
+            N -- Yes --> O[PostgreSQL: Local Database Log]
+            O --> P[IPFS Network: Generates File CID]
+            P --> Q[Ethereum Sepolia: Smart Contract Logging]
+            
+            N -- Yes --> R[Extension: Inject Pink Blocking Overlay]
+            N -- No --> S[Extension: Allow Safe Browsing]
+            
+            Q --> T[React SOC Dashboard: Verifiable Threat Alert]
+            
+            classDef ai fill:#1a4d2e,stroke:#4caf50,stroke-width:2px;
+            classDef block fill:#4a235a,stroke:#9b59b6,stroke-width:2px;
+            classDef ext fill:#154360,stroke:#3498db,stroke-width:2px;
+            
+            class I,J,K,D ai;
+            class O,P,Q,T block;
+            class B,R,S ext;
+        </div>
+
+        <h2 id="heuristics">3. Heuristic Mathematics & Feature Extraction</h2>
+        <p>
+            Machine learning models cannot read raw strings; they require strict mathematical representations of data. PhishGuard's <code>model_inference.py</code> uses several custom heuristic algorithms to convert a URL into a 22-dimensional feature vector.
+        </p>
+
+        <div class="card">
+            <h3>Specific Heuristic Algorithms and Their Mathematics</h3>
+            
+            <h4>1. Shannon Entropy (Randomness Detection)</h4>
+            <p>Malware often uses Domain Generation Algorithms (DGAs) to create random URLs like <code>http://x8k-9z2p-ql.com</code> to avoid blacklists. Entropy mathematically proves this randomness.</p>
+            <div class="math-box">
+                <b>Formula:</b> H(X) = - Σ [ P(x_i) * log₂(P(x_i)) ]<br><br>
+                <b>Implementation:</b> For every unique character in the URL, the algorithm calculates its probability <code>P(x) = count(char) / total_length</code>. It sums the negative log base 2 of these probabilities. The higher the number, the more random (and suspicious) the URL.
+            </div>
+
+            <h4>2. IP Address Obfuscation Detection</h4>
+            <p>Legitimate sites use DNS (e.g., <code>google.com</code>). Phishers often bypass DNS completely by using raw IP addresses or hex-encoded IPs.</p>
+            <div class="math-box">
+                <b>Algorithm:</b> Regex Matching <code>^\d{1,3}(\.\d{1,3}){3}$</code><br>
+                <b>Output:</b> Returns <code>1</code> (True) if the hostname is a direct IPv4 address, immediately increasing the threat score.
+            </div>
+
+            <h4>3. TLD Mimicry in Subdomain</h4>
+            <p>A classic phishing attack is to put a trusted brand in the subdomain (e.g., <code>paypal.com.secure-update.xyz</code>). The user sees "paypal.com" and trusts it.</p>
+            <div class="math-box">
+                <b>Algorithm Logic:</b> <br>
+                1. Use <code>tldextract</code> to separate the URL into <code>Subdomain</code>, <code>Domain</code>, and <code>Suffix/TLD</code>.<br>
+                2. Evaluate: <code>IF Suffix IN Subdomain THEN return 1</code><br>
+                3. In <code>paypal.com.secure-update.xyz</code>, the suffix is <code>xyz</code>, but the subdomain contains <code>com</code>, triggering a massive red flag.
+            </div>
+
+            <h4>4. Digit to Character Ratio Mapping</h4>
+            <div class="math-box">
+                <b>Ratio_Digits_URL Formula:</b><br>
+                R = Σ(is_digit(char)) / Total_URL_Length<br><br>
+                Legitimate domains rarely consist mostly of numbers. A high ratio mathematically penalizes the URL.
+            </div>
+            
+            <h4>5. Phish Hints Keyword Density</h4>
+            <p>The system counts occurrences of high-risk keywords (<code>secure, login, update, verify, banking</code>) inside the raw string to create a density score.</p>
+        </div>
+
+
+        <h2 id="ml-deepdive">4. Machine Learning Deep Dive: XGBoost & MLP</h2>
+        
+        <div class="card">
+            <h3>Model 1: XGBoost (Extreme Gradient Boosting) - <i>The Decision Trees</i></h3>
+            <p>
+                XGBoost is not just a single model; it is an "Ensemble" of Decision Trees. 
+            </p>
+            
+            <div class="scenario-box">
+                <b>🌳 How Decision Trees Work (Real Usage):</b><br>
+                Imagine a flowchart. 
+                <br>- <b>Root Node (Top):</b> The model asks, "Is the URL length > 54 characters?" If Yes, go left. If No, go right.
+                <br>- <b>Internal Node:</b> "Does the URL contain an IP address?"
+                <br>- <b>Leaf (Bottom):</b> The final decision, e.g., "90% chance it is Phishing."<br><br>
+                A single tree is often inaccurate. <b>Gradient Boosting</b> fixes this. We build 150 trees sequentially. <br>
+                <b>Tree 1</b> predicts the data. It gets 10 URLs wrong.<br>
+                <b>Tree 2</b> is built specifically to fix Tree 1's mistakes. <br>
+                <b>Tree 3</b> fixes Tree 2's mistakes. <br>
+                By the time we hit Tree 150, the combined "forest" is incredibly precise.
+            </div>
+
+            <div class="math-box">
+                <b>The Mathematics of the Split:</b><br>
+                XGBoost decides exactly where to split a node (e.g., why >54 chars instead of >60 chars?) by calculating the <b>Similarity Score</b> and <b>Gain</b>. It uses Taylor Expansion (calculus derivatives) to find the exact split point that minimizes the Log-Loss the fastest.
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Model 2: Multi-Layer Perceptron (MLP) - <i>The Deep Neural Network</i></h3>
+            <p>
+                While trees use hard "Yes/No" splits, an MLP Neural Network mimics the human brain, allowing it to find deeply hidden, non-linear correlations (e.g., "A long URL is fine, UNLESS it also has 3 hyphens AND no SSL").
+            </p>
+
+            <div class="scenario-box">
+                <b>🧠 How the MLP Neurons Work (Real Usage):</b><br>
+                <br><b>1. Input Layer (22 Neurons):</b> Each of our 22 heuristic features (Entropy, Length, IP flag) enters one neuron.
+                <br><b>2. Hidden Layer 1 (128 Neurons):</b> Each of the 128 neurons receives data from ALL 22 inputs. But they apply <b>Weights</b>. A neuron acting as a "Security Expert" might multiply the "IP flag" by a massive weight (importance), but ignore the "URL Length".
+                <br><b>3. Hidden Layer 2 (64 Neurons):</b> These neurons look at the conclusions from the first 128 and synthesize them into higher-level thoughts.
+                <br><b>4. Output Layer (2 Neurons):</b> Returns the final probability of [Safe, Phishing].
+            </div>
+
+            <div class="math-box">
+                <b>The Mathematics of the MLP:</b><br>
+                <b>1. Activation (ReLU):</b> <code>f(x) = max(0, x)</code>. If a neuron's calculation is negative, it outputs 0. This stops irrelevant data from propagating.<br>
+                <b>2. Backpropagation:</b> When the MLP makes a wrong guess during training, it calculates the <b>Cross-Entropy Loss</b>. It then uses calculus (Chain Rule) to send that error backwards through the network, slightly adjusting every single "Weight" so it makes a better guess next time.
+            </div>
+        </div>
+
+        <h2 id="flow">5. Comprehensive Flow of Data at Each Layer</h2>
+        <p>
+            To fully understand PhishGuard, one must trace the flow of data from the exact moment a user clicks a malicious link to the moment the block is confirmed on the Ethereum network. 
+        </p>
+
+        <div class="card">
+            <h3>Layer 1: The Client/Edge Layer (Data Acquisition)</h3>
+            <p>
+                1. The Chrome Extension's <code>manifest.json</code> triggers the <code>background.js</code> service worker using the <code>chrome.webNavigation.onCommitted</code> API.<br>
+                2. <code>content.js</code> extracts the raw URL string and captures a <code>Base64</code> encoded screenshot of the viewport using the <code>chrome.tabs.captureVisibleTab</code> API.<br>
+                3. This payload is POSTed to the backend API at <code>/api/v1/scan</code>.
+            </p>
+        </div>
+
+        <div class="card">
+            <h3>Layer 2: The Gateway & Heuristics Layer (Data Enrichment)</h3>
+            <p>
+                1. The FastAPI server receives the payload.<br>
+                2. It triggers multiple <b>Parallel Coroutines</b> using Python's <code>asyncio.gather()</code>.<br>
+                3. <b>Coroutine A (WHOIS):</b> Queries Domain Age.<br>
+                4. <b>Coroutine B (SSL):</b> Checks for HTTPS certificates.<br>
+                5. The original JSON is now enriched with contextual intelligence before AI processing.
+            </p>
+        </div>
+
+        <div class="card">
+            <h3>Layer 3 & 4: AI & Vision Inference</h3>
+            <p>
+                1. The 22 features are mapped to a NumPy array, scaled, and fed into the <b>XGBoost + MLP Ensemble</b>, outputting a threat probability (e.g., 87.5%).<br>
+                2. Concurrently, the <b>Vision Engine</b> decodes the Base64 image into an OpenCV multidimensional matrix. It converts it to Grayscale and uses <code>skimage.metrics.ssim</code> to compare its structure against known banking logins.
+            </p>
+        </div>
+
+        <div class="card">
+            <h3>Layer 5: The Web3 Blockchain Layer (Immutable Logging)</h3>
+            <p>
+                1. The incident is written to the local PostgreSQL database for immediate rendering on the React SOC Dashboard.<br>
+                2. <b>IPFS Pinning:</b> The massive JSON report (including the ML probabilities and base64 evidence) is pushed to the InterPlanetary File System (IPFS), returning a CID (Hash).<br>
+                3. <b>Blockchain Transaction:</b> The backend uses an Ethereum Private Key to sign a transaction, calling the <code>logThreat(url, cid)</code> function on the Sepolia Smart Contract. The data is now immutable.
+            </p>
+        </div>
+
+        <h2 id="auth-rbac">6. Authentication & Zero-Trust Architecture (RBAC)</h2>
+        <div class="card">
+            <p>
+                A core innovation of PhishGuard is the elimination of vulnerable standalone login pages for the Security Operations Center (SOC) dashboard. We employ a <b>Hardware-Linked Zero-Trust</b> methodology.
+            </p>
+            <ul>
+                <li><b>Extension as an Auth Key:</b> Instead of logging into a website, analysts register and authenticate directly through the Chrome Extension popup. The extension requests a JSON Web Token (JWT) from the FastAPI backend.</li>
+                <li><b>Encrypted Storage:</b> The JWT is securely stored in <code>chrome.storage.local</code>. It is completely isolated from web scripts, mitigating Cross-Site Scripting (XSS) theft.</li>
+                <li><b>URL Parameter Injection:</b> When an analyst clicks "Open Dashboard", the extension securely injects the JWT into the URL payload. The React frontend consumes this, verifying the signature cryptographically before rendering the UI.</li>
+                <li><b>Role-Based Access Control (RBAC):</b> The JWT payload contains the user's role.
+                    <ul>
+                        <li><b>Standard User:</b> Can only view their locally blocked threats.</li>
+                        <li><b>Security Analyst:</b> Can view the global threat matrix but cannot trigger model retraining.</li>
+                        <li><b>Administrator:</b> Has root-level access, can view all Ethereum transaction hashes, and orchestrate ML retraining pipelines.</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+
+        <h2 id="blockchain">7. Web3 Blockchain & Gas Optimization</h2>
+        <div class="card">
+            <p>
+                Storing data on the Ethereum blockchain is incredibly expensive ("Gas Fees"). Storing an entire JSON threat report (which contains a base64 image) directly in a Smart Contract would cost hundreds of dollars per transaction.
+            </p>
+            <div class="scenario-box">
+                <b>🎓 Explaining to Invigilators (Gas Optimization):</b><br>
+                To solve the exorbitant costs of blockchain storage, PhishGuard uses a hybrid approach with IPFS (InterPlanetary File System). <br><br>
+                1. The massive 5MB JSON threat report is uploaded to the decentralized IPFS network.<br>
+                2. IPFS returns a tiny 46-character string called a <b>CID (Content Identifier)</b>. The CID is a cryptographic hash of the exact file contents.<br>
+                3. We write ONLY the malicious URL and the 46-character CID to the Ethereum Smart Contract. This reduces the Ethereum transaction cost by 99.9%, while maintaining 100% cryptographic proof that the data has not been tampered with.
+            </div>
+        </div>
+
+        <h2 id="deployment">8. Deployment Architecture (Docker & CI/CD)</h2>
+        <div class="card">
+            <p>
+                PhishGuard is designed to be easily deployable in modern cloud environments, proving industry-readiness beyond just local execution.
+            </p>
+            <ul>
+                <li><b>Containerization (Docker):</b> The entire backend, frontend, and PostgreSQL database are containerized using <code>docker-compose.yml</code>. This ensures the application runs identically on Windows, Linux, and macOS without dependency conflicts.</li>
+                <li><b>FastAPI on Uvicorn:</b> The backend uses Uvicorn, an ASGI (Asynchronous Server Gateway Interface) server. This allows Python to handle thousands of concurrent API requests from browser extensions without locking the main thread.</li>
+                <li><b>Frontend via Vite & Nginx:</b> The React SOC Dashboard is bundled using Vite for rapid compilation and served in production via a reverse-proxy (Nginx), ensuring high availability and static file caching.</li>
+            </ul>
+        </div>
+
+        <h2 id="future">9. Future Roadmap & Ethical Considerations</h2>
+        <div class="card">
+            <h3>Future Roadmap (MLOps & Retraining)</h3>
+            <p>
+                The next architectural phase for PhishGuard is implementing a dynamic <b>MLOps Retraining Pipeline</b>. Currently, models are static. The future pipeline will use <b>Apache Airflow</b> or <b>Celery</b> to aggregate false-negatives (phishing sites missed by the ML but caught by a human) at the end of each week, automatically retraining the Random Forest and MLP ensemble, and hot-swapping the <code>.pkl</code> file in production with zero downtime.
+            </p>
+
+            <h3>Ethical Considerations & Privacy</h3>
+            <p>
+                As a tool that operates in the browser and captures DOM snapshots, user privacy is paramount.
+            </p>
+            <ul>
+                <li><b>Selective Capture:</b> The Chrome Extension only captures screenshots and DOM data when an initial heuristic flag is triggered (e.g., suspicious URL). It does not record session data on known safe sites like <code>google.com</code>.</li>
+                <li><b>No PII Storage:</b> The FastAPI backend strips out password fields, input boxes, and Personally Identifiable Information (PII) before calculating the SSIM score or pinning the report to IPFS. The blockchain only retains the URL string and the abstracted CID hash.</li>
+            </ul>
+        </div>
+
+    </div>
+</body>
+</html>

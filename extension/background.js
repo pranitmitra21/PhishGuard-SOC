@@ -32,7 +32,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     activeTab.url.startsWith("chrome://") ||
                     activeTab.url.startsWith("chrome-extension://") ||
                     activeTab.url.startsWith("edge://") ||
-                    activeTab.url.startsWith("about:")
+                    activeTab.url.startsWith("about:") ||
+                    activeTab.url.startsWith("file://")
                 )
             ) {
                 sendResponse({ error: "restricted_page" });

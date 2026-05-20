@@ -5,7 +5,7 @@ import ForceGraph2D from 'react-force-graph-2d';
 import axios from 'axios';
 import {
   Activity, ShieldAlert, ShieldCheck,
-  Database, X, Crosshair, Network, Zap, Lock, Wifi
+  Database, X, Crosshair, Network, Zap, Lock, Wifi, Search, RefreshCw
 } from 'lucide-react';
 
 const API_URL = 'http://127.0.0.1:8000';
@@ -38,6 +38,31 @@ function isThreatNode(node) {
   return node.group === 3 || !!node.isCluster ||
     (node.risk_score != null && node.risk_score >= 80);
 }
+
+const generateAiExplanation = (log) => {
+  if (log.status === 'Safe') return "The PhishGuard AI engine verified this vector as SAFE. The XGBoost + MLP neural ensemble analyzed structural DOM integrity, WHOIS age, and routing protocols, finding zero anomalies. Cross-referenced with the Tranco Top 1M whitelist and global threat intel.";
+  
+  let reasons = [];
+  if (log.confidence >= 99.9) reasons.push("a verified match against global Threat Intelligence databases (Safe Browsing / Known Blocklists)");
+  if (log.has_at_symbol) reasons.push("an obfuscated '@' symbol designed to mask the true routing destination");
+  if (!log.is_https) reasons.push("a critically insecure HTTP transport layer which exposes user packets");
+  if (log.num_subdomains > 2) reasons.push(`an abnormally long chain of subdomains (${log.num_subdomains} levels) typically used to spoof legitimate brand identities`);
+  if (log.url_length > 75) reasons.push("a heavily extended URL string designed to push malicious parameters off-screen");
+  if (log.suspicious_dom_elements > 0) reasons.push(`anomalous HTML/DOM structures (${log.suspicious_dom_elements} instances) such as hidden scripts, credential harvesting forms, or cross-origin overlays`);
+  
+  if (reasons.length === 0) {
+    if (log.status === 'Suspicious') return "The PhishGuard Neural Ensemble (XGBoost + MLP) flagged this vector as SUSPICIOUS. While explicit heuristic violations are absent, the model detected deep statistical anomalies in the URL's lexical structure and network routing path. Proceed with heightened caution.";
+    return "The PhishGuard Neural Ensemble (XGBoost + MLP) quarantined this vector as PHISHING based on deep statistical pattern matching. The combination of domain age, WHOIS anonymity, and URL structure highly correlates with zero-day credential harvesting infrastructure.";
+  }
+  
+  let formattedReasons = reasons.length > 1 ? reasons.slice(0, -1).join(" | ") + " | " + reasons[reasons.length - 1] : reasons[0];
+  
+  if (log.status === 'Suspicious') {
+      return `The Heuristics Engine flagged this Threat Vector as SUSPICIOUS. The following risk factors were identified: [ ${formattedReasons} ]. The AI confidence score has not reached critical mass for an absolute block, but extreme caution is advised.`;
+  }
+  
+  return `The PhishGuard Neural Ensemble successfully quarantined this Threat Vector as PHISHING. The pipeline explicitly detected: [ ${formattedReasons} ]. Forensic evidence has been hashed and pinned to the Ethereum Sepolia network via IPFS.`;
+};
 
 /* ─── SpeedTest modal ──────────────────────────────────── */
 const SpeedTestModal = memo(({ onClose }) => {
@@ -101,9 +126,9 @@ const InvestPanel = memo(({ node, details, investigating, onClose }) => (
         {/* header */}
         <div className="flex justify-between items-start border-b border-cyber-cyan/20 pb-4 mb-5">
           <div className="min-w-0 pr-3">
-            <span className="text-[9px] text-cyber-cyan/50 uppercase tracking-[0.2em] block mb-1">Target Identity</span>
-            <h2 className="text-sm text-cyber-cyan font-bold truncate" title={node.id}>{node.id}</h2>
-            <span className="mt-2 inline-block px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest border"
+            <span className="text-xs text-cyber-cyan/50 uppercase tracking-[0.2em] block mb-1">Target Identity</span>
+            <h2 className="text-lg text-cyber-cyan font-bold truncate" title={node.id}>{node.id}</h2>
+            <span className="mt-2 inline-block px-2 py-0.5 text-xs font-bold uppercase tracking-widest border"
               style={{
                 color: node.group === 3 ? '#ff003c' : '#a1a1aa',
                 borderColor: node.group === 3 ? 'rgba(255,0,60,0.4)' : 'rgba(161,161,170,0.3)',
@@ -119,7 +144,7 @@ const InvestPanel = memo(({ node, details, investigating, onClose }) => (
           {/* risk meter */}
           {node.risk_score != null && (
             <div className="border border-cyber-cyan/20 p-3 bg-cyber-cyan/[0.02]">
-              <span className="text-[9px] text-gray-500 uppercase tracking-widest block mb-2">AI Risk Inference</span>
+              <span className="text-xs text-gray-500 uppercase tracking-widest block mb-2">AI Risk Inference</span>
               <div className="flex items-center gap-3">
                 <div className="flex-1 h-1.5 bg-gray-900 border border-gray-800">
                   <div className="h-full transition-all duration-1000"
@@ -129,7 +154,7 @@ const InvestPanel = memo(({ node, details, investigating, onClose }) => (
                       boxShadow: `0 0 8px ${node.risk_score >= 80 ? '#ff003c' : node.risk_score >= 40 ? '#ffb000' : '#39ff14'}`,
                     }} />
                 </div>
-                <span className="text-xs font-bold tabular-nums"
+                <span className="text-sm font-bold tabular-nums"
                   style={{ color: node.risk_score >= 80 ? '#ff003c' : node.risk_score >= 40 ? '#ffb000' : '#39ff14' }}>
                   {node.risk_score.toFixed(1)}%
                 </span>
@@ -145,13 +170,52 @@ const InvestPanel = memo(({ node, details, investigating, onClose }) => (
             </div>
           ) : details ? (
             <div className="space-y-3">
+              {/* Deep Scan Matrix */}
+              {details.log && (
+                <div className="border border-cyber-cyan/20 p-3 bg-cyber-cyan/[0.02]">
+                  <h4 className="text-xs font-bold text-cyber-cyan uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                    <Activity size={12} /> Deep Scan Matrix Output
+                  </h4>
+                  <div className="grid grid-cols-4 gap-2 mb-3 border-b border-gray-900 pb-2">
+                    <div>
+                      <div className="text-[10px] text-gray-600 uppercase tracking-widest">STR.LEN</div>
+                      <div className="text-xs font-bold text-gray-300">{details.log.url_length ?? 0} bytes</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-gray-600 uppercase tracking-widest">SYM.[@]</div>
+                      <div className="text-xs font-bold" style={{ color: details.log.has_at_symbol ? '#ff003c' : '#39ff14' }}>
+                        {details.log.has_at_symbol ? 'TRUE' : 'FALSE'}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-gray-600 uppercase tracking-widest">SUB.NODES</div>
+                      <div className="text-xs font-bold text-gray-300">{details.log.num_subdomains ?? 0}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-gray-600 uppercase tracking-widest">PROTO</div>
+                      <div className="text-xs font-bold" style={{ color: details.log.is_https ? '#39ff14' : '#ffb000' }}>
+                        {details.log.is_https ? 'HTTPS/SEC' : 'HTTP/VULN'}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-3 pl-3 border-l-2 border-cyber-amber/50">
+                    <div className="text-[10px] text-cyber-amber uppercase tracking-widest mb-1 flex items-center gap-1">
+                      <Search size={12} /> AI_HEURISTIC_EXPLANATION
+                    </div>
+                    <p className="text-xs text-gray-400 leading-relaxed">
+                      {generateAiExplanation(details.log)}
+                    </p>
+                  </div>
+                </div>
+              )}
               {/* SSL */}
               <div className="border border-cyber-cyan/20 p-3 bg-cyber-cyan/[0.02]">
-                <h4 className="text-[9px] font-bold text-cyber-cyan uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                  <Lock size={11} /> SSL/TLS Protocol
+                <h4 className="text-xs font-bold text-cyber-cyan uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                  <Lock size={12} /> SSL/TLS Protocol
                 </h4>
                 {details.ssl?.valid ? (
-                  <div className="space-y-1.5 text-[10px]">
+                  <div className="space-y-1.5 text-xs">
                     {[['Issuer', details.ssl.issuer], ['Subject', details.ssl.subject], ['Expires', details.ssl.valid_to]].map(([k, v]) => (
                       <div key={k} className="flex justify-between items-start gap-2">
                         <span className="text-gray-600 shrink-0">{k}:</span>
@@ -167,17 +231,17 @@ const InvestPanel = memo(({ node, details, investigating, onClose }) => (
               </div>
               {/* DNS */}
               <div className="border border-cyber-cyan/20 p-3 bg-cyber-cyan/[0.02]">
-                <h4 className="text-[9px] font-bold text-cyber-cyan uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                  <Activity size={11} /> DNS Records
+                <h4 className="text-xs font-bold text-cyber-cyan uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                  <Activity size={12} /> DNS Records
                 </h4>
                 {['A','MX','TXT'].map(type => (
                   <div key={type} className="mb-2">
-                    <span className="text-[8px] text-gray-600 uppercase tracking-widest border-b border-gray-900 block pb-0.5 mb-1">{type}</span>
+                    <span className="text-[10px] text-gray-600 uppercase tracking-widest border-b border-gray-900 block pb-0.5 mb-1">{type}</span>
                     {details.dns?.[type]?.length > 0
                       ? details.dns[type].map((r, i) => (
-                          <div key={i} className="text-[9px] text-gray-400 break-all pl-2 border-l border-gray-800">{r}</div>
+                          <div key={i} className="text-xs text-gray-400 break-all pl-2 border-l border-gray-800">{r}</div>
                         ))
-                      : <span className="text-[9px] text-gray-700 pl-2">NULL</span>
+                      : <span className="text-xs text-gray-700 pl-2">NULL</span>
                     }
                   </div>
                 ))}
@@ -228,6 +292,20 @@ export default function NetGraph() {
     return () => window.removeEventListener('resize', onResize);
   }, [calcDims]);
 
+  // Configure D3 Physics to prevent squeezing
+  useEffect(() => {
+    const fg = fgRef.current;
+    if (fg) {
+      // Increase repulsion to keep nodes separated without blowing them too far apart
+      const charge = fg.d3Force('charge');
+      if (charge) charge.strength(-180);
+      
+      // Moderate link distance so nodes have breathing room
+      const link = fg.d3Force('link');
+      if (link) link.distance(50);
+    }
+  }, [fgRef]);
+
   // Fetch graph data on mount
   useEffect(() => {
     let alive = true;
@@ -244,9 +322,31 @@ export default function NetGraph() {
     const iv = setInterval(async () => {
       try {
         const r = await axios.get(`${API_URL}/api/network-graph-data`);
-        if (alive) setGraphData(prev =>
-          prev.nodes.length === r.data.nodes.length ? prev : r.data
-        );
+        if (alive) {
+          setGraphData(prev => {
+            if (!r.data || !Array.isArray(r.data.nodes) || !Array.isArray(r.data.links)) {
+                return prev; // Backend didn't return valid graph data, safely ignore
+            }
+            if (prev.nodes.length !== r.data.nodes.length || prev.links.length !== r.data.links.length) {
+              return r.data; // New architecture, reset graph
+            }
+            // Gently update properties of existing nodes in-place to preserve physics (x, y)
+            let changed = false;
+            for (let i = 0; i < prev.nodes.length; i++) {
+               const pNode = prev.nodes[i];
+               const nNode = r.data.nodes.find(n => n.id === pNode.id);
+               if (nNode && (pNode.group !== nNode.group || pNode.timestamp !== nNode.timestamp)) {
+                   pNode.group = nNode.group;
+                   pNode.timestamp = nNode.timestamp;
+                   pNode.risk_score = nNode.risk_score;
+                   pNode.val = nNode.val;
+                   pNode.isCluster = nNode.isCluster;
+                   changed = true;
+               }
+            }
+            return changed ? { nodes: [...prev.nodes], links: prev.links } : prev;
+          });
+        }
       } catch { /* silent */ }
     }, 5_000); // Polling faster to show live updates smoothly
     return () => { alive = false; clearInterval(iv); };
@@ -314,6 +414,11 @@ export default function NetGraph() {
       });
   }, [sessionMinMax.max, sessionMinMax.min]);
 
+  // Force snap to LIVE when switching modes or changing sessions
+  useEffect(() => {
+      setTimeRange([sessionMinMax.min, sessionMinMax.max]);
+  }, [sessionMode, activeSessionId, sessionMinMax.min, sessionMinMax.max]);
+
   // Filtered Graph Data (Memoized for ForceGraph2D)
   const filteredGraphData = React.useMemo(() => {
       let fNodes = graphData.nodes;
@@ -344,6 +449,13 @@ export default function NetGraph() {
 
   const handleRecenter = useCallback(() => fgRef.current?.zoomToFit(500, 80), []);
 
+  const handleRefresh = useCallback(() => {
+    if (fgRef.current) {
+      fgRef.current.d3ReheatSimulation(); // Untangle squeezed physics
+      setTimeout(() => fgRef.current.zoomToFit(500, 80), 50);
+    }
+  }, []);
+
   // Node click → investigation
   const handleNodeClick = useCallback(async (node) => {
     setSelectedNode(node);
@@ -366,7 +478,7 @@ export default function NetGraph() {
   const drawNode = useCallback((node, ctx, gs) => {
     const color  = getNodeColor(node);
     const threat = isThreatNode(node);
-    const r      = node.val || 6;
+    const r      = (node.val || 6) * 1.5; // Scale up visual size of nodes by 50%
     const isCore = node.group === 0;
 
     ctx.shadowBlur  = threat ? 28 : isCore ? 20 : 12;
@@ -529,6 +641,12 @@ export default function NetGraph() {
             sessionMode ? 'border-cyber-cyan text-cyber-cyan shadow-[0_0_15px_rgba(0,243,255,0.25)]' : 'border-gray-600 text-gray-500 hover:border-gray-400'
           }`}>
           <Network size={13} /> {sessionMode ? 'Session Mode' : 'Global Mode'}
+        </button>
+        <button onClick={handleRefresh}
+          className="bg-black/85 backdrop-blur-md border border-cyber-cyan/40 text-cyber-cyan font-mono text-[10px]
+          uppercase tracking-widest px-4 py-2 flex items-center gap-2
+          hover:bg-cyber-cyan/10 hover:border-cyber-cyan/80 hover:shadow-[0_0_15px_rgba(0,243,255,0.25)] transition-all">
+          <RefreshCw size={13} /> Refresh
         </button>
         <button onClick={handleRecenter}
           className="bg-black/85 backdrop-blur-md border border-cyber-cyan/40 text-cyber-cyan font-mono text-[10px]

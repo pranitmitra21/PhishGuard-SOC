@@ -72,6 +72,7 @@ def log_to_blockchain(url_hash: str, features_dict: dict = None):
         ipfs_hash = upload_evidence_to_ipfs(url_hash, features_dict)
         # Create a highly compact JSON string to save gas on-chain
         compact_details = {
+            "url": features_dict.get("url", "unknown"),
             "conf": round(features_dict.get("ml_confidence", 100.0), 1),
             "len": features_dict.get("url_length", 0),
             "sub": features_dict.get("num_subdomains", 0),
@@ -112,9 +113,9 @@ def log_to_blockchain(url_hash: str, features_dict: dict = None):
     tx_hash = w3.eth.send_raw_transaction(signed_tx.raw_transaction) # Use raw_transaction in v6+
     
     # Wait for receipt
-    # B8 FIX: Added timeout=120 seconds. Without a timeout, an unresponsive Polygon node
+    # B8 FIX: Added timeout=120 seconds. Without a timeout, an unresponsive Sepolia node
     # or a dropped transaction would cause the background thread to hang indefinitely.
-    print(f"Broadcasting TX to Polygon Amoy... Hash: {tx_hash.hex()}")
+    print(f"Broadcasting TX to Ethereum Sepolia... Hash: {tx_hash.hex()}")
     receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
     
     if receipt.status != 1:

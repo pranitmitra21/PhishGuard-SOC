@@ -44,6 +44,7 @@ export default function RetrainModel() {
       setProgress(0);
       setEpochs([]);
     } catch (err) {
+      console.error(err);
       alert("Failed to trigger retraining.");
     }
   };

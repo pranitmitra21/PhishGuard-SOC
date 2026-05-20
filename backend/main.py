@@ -98,6 +98,7 @@ async def retry_failed_blockchain_logs():
             for log in pending_logs:
                 try:
                     features_dict = {
+                        "url": log.url,
                         "url_length": log.url_length,
                         "has_at_symbol": log.has_at_symbol,
                         "num_subdomains": log.num_subdomains,
@@ -174,7 +175,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     return {"access_token": access_token, "token_type": "bearer"}
 
 def process_blockchain_bg(url_hash: str, features_dict: dict):
-    # This runs asynchronously so Polygon testnet latency doesn't block the UI.
+    # This runs asynchronously so Ethereum Sepolia testnet latency doesn't block the UI.
     # IMPORTANT: logged_to_blockchain is set False in the DB by detect_url().
     # We only flip it True here AFTER the TX confirms on-chain.
     # If this fails, it stays False and the retry_failed_blockchain_logs worker
@@ -293,22 +294,22 @@ def detect_url(features: schemas.URLFeatures, background_tasks: BackgroundTasks,
         future_ti    = executor.submit(check_safe_browsing, features.url) if config.enable_safe_browsing else None
 
         try:
-            domain_age_days = future_whois.result(timeout=3)
+            domain_age_days = future_whois.result(timeout=2.0)
         except Exception:
             domain_age_days = -1  # Timeout or error — treat as unknown age
 
         try:
-            ssl_info = future_ssl.result(timeout=3)
+            ssl_info = future_ssl.result(timeout=2.0)
         except Exception:
             ssl_info = {"valid": False}
 
         try:
-            dns_info = future_dns.result(timeout=3)
+            dns_info = future_dns.result(timeout=2.0)
         except Exception:
             dns_info = {"MX": []}
 
         try:
-            ti_result = future_ti.result(timeout=3) if future_ti else {"is_phishing": False}
+            ti_result = future_ti.result(timeout=2.0) if future_ti else {"is_phishing": False}
         except Exception:
             ti_result = {"is_phishing": False}
 
@@ -820,14 +821,31 @@ def get_network_graph(db: Session = Depends(database.get_db), current_user: mode
     return {"nodes": nodes, "links": links}
 
 @app.get("/api/node-investigate")
-def node_investigate(domain: str, current_user: models.User = Depends(auth.get_current_user)):
+def node_investigate(domain: str, db: Session = Depends(database.get_db), current_user: models.User = Depends(auth.get_current_user)):
     ssl_info = get_ssl_cert(domain, f"https://{domain}")
     dns_info = get_dns_records(domain)
+    
+    log = db.query(models.DetectionLog).filter(models.DetectionLog.url.contains(domain)).order_by(models.DetectionLog.timestamp.desc()).first()
+    
+    log_details = None
+    if log:
+        log_details = {
+            "status": log.status,
+            "confidence": log.confidence,
+            "url": log.url,
+            "url_length": log.url_length,
+            "num_subdomains": log.num_subdomains,
+            "has_at_symbol": log.has_at_symbol,
+            "suspicious_dom_elements": log.suspicious_dom_elements,
+            "is_https": log.is_https,
+            "logged_to_blockchain": log.logged_to_blockchain
+        }
     
     return {
         "domain": domain,
         "ssl": ssl_info,
-        "dns": dns_info
+        "dns": dns_info,
+        "log": log_details
     }
 
 @app.get("/api/speedtest/ping")

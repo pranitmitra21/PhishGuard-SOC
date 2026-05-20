@@ -32,7 +32,7 @@ export default function AuthMatrix() {
       payload.admin_pin = pin;
     } else if (newRole === 'Analyst') {
       if (!user.wallet_id) {
-        const wallet = prompt("Enter Polygon Wallet ID for Analyst blockchain logging:");
+        const wallet = prompt("Enter Ethereum Sepolia Wallet ID for Analyst blockchain logging:");
         if (!wallet || wallet.trim() === '') {
           alert("Wallet ID is required to grant Analyst clearance.");
           fetchUsers(); // reset dropdown

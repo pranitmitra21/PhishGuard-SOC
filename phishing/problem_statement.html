@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Problem Statement</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background-color: #f9fafb;
+        }
+        .container {
+            background: #ffffff;
+            padding: 50px;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: #111827;
+            margin-top: 2em;
+            margin-bottom: 0.5em;
+            font-weight: 700;
+        }
+        h1 { font-size: 2.25rem; border-bottom: 2px solid #e5e7eb; padding-bottom: 0.3em; margin-top: 0; }
+        h2 { font-size: 1.875rem; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.3em; }
+        h3 { font-size: 1.5rem; }
+        p { margin-bottom: 1.25em; }
+        a { color: #2563eb; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        code {
+            background-color: #f3f4f6;
+            padding: 0.2em 0.4em;
+            border-radius: 6px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.875em;
+        }
+        pre {
+            background-color: #1f2937;
+            color: #f9fafb;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        pre code {
+            background-color: transparent;
+            color: inherit;
+            padding: 0;
+        }
+        blockquote {
+            border-left: 4px solid #3b82f6;
+            padding-left: 1rem;
+            color: #4b5563;
+            margin-left: 0;
+            background-color: #eff6ff;
+            padding: 1rem;
+            border-radius: 0 8px 8px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2em 0;
+        }
+        th, td {
+            padding: 0.75rem 1rem;
+            border: 1px solid #e5e7eb;
+            text-align: left;
+        }
+        th {
+            background-color: #f9fafb;
+            font-weight: 600;
+        }
+        tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+        hr {
+            border: 0;
+            height: 1px;
+            background: #e5e7eb;
+            margin: 3em 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>PhishGuard SOC — Detailed Problem Statement</h1>
+<hr />
+<h2>1. Background &amp; The Global Threat Landscape</h2>
+<p>Phishing is the single most common form of cybercrime in the world
+today. It is a socially engineered attack in which a malicious actor
+creates a fraudulent website or URL that impersonates a legitimate one —
+such as a bank, e-commerce portal, or email provider — to deceive users
+into surrendering sensitive information such as passwords, credit card
+numbers, or authentication tokens.</p>
+<p>According to industry reports: - <strong>Over 3.4 billion phishing
+emails</strong> are sent every single day globally. - Phishing attacks
+account for <strong>more than 36% of all data breaches</strong> (Verizon
+DBIR). - The <strong>average financial loss per phishing
+incident</strong> for organizations has crossed <strong>$4.9 million
+USD</strong>. - A new phishing website is created approximately
+<strong>every 20 seconds</strong>, making reactive blocklists inadequate
+by design. - <strong>90% of all cyberattacks begin with a phishing
+attempt</strong>, making it the primary attack vector across
+industries.</p>
+<p>Despite decades of security research, phishing remains devastatingly
+effective because it targets the weakest link in any security system:
+the <strong>human user</strong>. Users cannot be expected to manually
+inspect every URL they visit for subtle deception — especially when
+attackers use techniques like typosquatting (<code>paypa1.com</code>),
+subdomain injection (<code>paypal.secure-login.xyz</code>), and visual
+UI cloning that are virtually invisible to the human eye.</p>
+<hr />
+<h2>2. Core Problems Being Solved</h2>
+<h3>Problem 1 — No Real-Time Browser-Level Protection</h3>
+<p><strong>The Gap</strong>: Existing antivirus software and firewalls
+operate at the network layer and are installed on devices. They cannot
+inspect the rich contextual signals available <em>inside a live
+webpage</em> — such as the structure of HTML forms, whether a password
+field submits to an external domain, or the presence of hidden
+iframes.</p>
+<p><strong>The Consequence</strong>: A user visiting a visually
+identical fake banking page in Chrome gets no warning. By the time the
+network-level tool detects an anomaly (if it does), the user’s
+credentials may already have been submitted.</p>
+<p><strong>PhishGuard’s Answer</strong>: A <strong>Chrome Extension
+(Manifest V3)</strong> runs a deep DOM feature extractor inside every
+open webpage. It captures: - Whether the page hosts a password form that
+submits to a <strong>cross-origin domain</strong> (Zero-Click Credential
+Theft) - The presence of hidden or zero-dimension
+<code>&lt;iframe&gt;</code> elements (classic click-jacking and data
+exfiltration technique) - URL-level signals like subdomain count,
+<code>@</code> symbol presence, and HTTPS status — all extracted live
+from the active browser tab</p>
+<hr />
+<h3>Problem 2 — Static Blocklists Are Reactive, Not Proactive</h3>
+<p><strong>The Gap</strong>: The most widely used defenses — browser
+built-in blocklists, Google Safe Browsing, and antivirus URL databases —
+are <strong>reactive systems</strong>. A URL must first be reported,
+verified, and then added to the blocklist. This process typically takes
+<strong>24 to 72 hours</strong>.</p>
+<p><strong>The Consequence</strong>: Phishing campaigns are designed to
+be ephemeral. Attackers launch a site, harvest credentials for 48 hours,
+and then abandon the domain — often before any blocklist is updated.
+Studies show that over <strong>60% of phishing sites are active for less
+than 24 hours</strong>.</p>
+<p><strong>PhishGuard’s Answer</strong>: Rather than relying solely on
+blocklists, PhishGuard uses a <strong>trained Machine Learning model
+(XGBoost + Multi-Layer Perceptron (MLP) Ensemble)</strong> capable of analyzing a URL it has
+never seen before and predicting its threat probability. The model was
+trained on a <strong>50,000+ verified phishing vectors dataset</strong> of real phishing and
+benign URLs, allowing it to generalize to brand-new, previously unseen
+attack patterns.</p>
+<hr />
+<h3>Problem 3 — URL String Analysis Alone Is Insufficient</h3>
+<p><strong>The Gap</strong>: Even ML-based URL classifiers that analyze
+URL strings are vulnerable to <strong>zero-day visual phishing</strong>
+— attacks where an adversary compromises a legitimate, trusted domain
+(or uses a brand-new domain with a clean reputation) and hosts a
+pixel-perfect clone of a bank or corporate login page. The URL passes
+all string-based checks because the domain itself is not malicious.</p>
+<p><strong>The Consequence</strong>: A user visits
+<code>accounts.verylegit-corp.com/microsoft-login</code> — the URL is
+HTTPS, has no suspicious subdomains, has no typosquatting, and passes
+every lexical check. But the page is a cloned Microsoft login page.</p>
+<p><strong>PhishGuard’s Answer</strong>: When the Chrome extension
+detects a <strong>password form on a page</strong>, it captures a
+screenshot of the visible page and sends it to the backend
+<code>/vision-scan</code> endpoint. The <strong>Visual AI
+Engine</strong> uses <strong>OpenCV</strong> and the <strong>SSIM
+(Structural Similarity Index)</strong> algorithm to compare the live
+screenshot against a library of known brand login pages. If any match
+exceeds 80% visual similarity, the page is flagged as a UI clone
+regardless of URL analysis results.</p>
+<hr />
+<h3>Problem 4 — Detection Without Explanation Is Unacceptable</h3>
+<p><strong>The Gap</strong>: Many security tools give a binary verdict:
+“safe” or “dangerous.” They provide no explanation to the user about
+<em>why</em> a site was flagged. This creates two serious problems: 1.
+<strong>User distrust</strong>: Users who don’t understand the reason
+are more likely to dismiss the warning and proceed anyway. 2.
+<strong>High false-positive frustration</strong>: If a legitimate site
+is flagged with no reason given, users lose confidence in the tool
+entirely.</p>
+<p>This lack of transparency is known as the <strong>Black Box AI
+Problem</strong> in cybersecurity.</p>
+<p><strong>PhishGuard’s Answer</strong>: Every detection verdict
+includes a structured <strong>Explainable AI (XAI) report</strong> — a
+plain-English list of exactly which signals triggered the alert:</p>
+<blockquote>
+<p><em>“⚠️ Typosquatting detected (mimicking ‘paypal’)”</em><br />
+<em>“⚠️ Brand name ‘google’ used deceptively in subdomain”</em><br />
+<em>“⚠️ Zero-Click Theft: Password form submits to external tracking
+domain!”</em><br />
+<em>“⚠️ High hostname entropy (4.73) — possible bot-generated
+domain”</em></p>
+</blockquote>
+<p>These reasons are displayed in the browser extension popup and also
+injected as a <strong>full-screen blocking overlay</strong> directly
+onto the suspicious webpage, mirroring how enterprise SIEM (Security
+Information and Event Management) tools present structured threat
+intelligence.</p>
+<hr />
+<h3>Problem 5 — No Tamper-Proof Record of Phishing Events</h3>
+<p><strong>The Gap</strong>: When a phishing attack is detected and
+logged, the log record is typically stored in a centralized SQL
+database. Centralized records are: - <strong>Mutable</strong> — a
+compromised admin or insider threat can delete or modify them. -
+<strong>Single points of failure</strong> — if the server is lost, so is
+the evidence. - <strong>Non-auditable</strong> — there is no way for an
+external party to independently verify when and what was logged.</p>
+<p>For cybercrime prosecutions, insurance claims, and regulatory
+compliance (GDPR, HIPAA), a verifiable, immutable audit trail is not
+optional — it is legally and procedurally essential.</p>
+<p><strong>PhishGuard’s Answer</strong>: Every URL confirmed as Phishing
+is logged asynchronously to an <strong>Ethereum smart contract</strong>
+(<code>ThreatLog.sol</code> deployed on a Ethereum Sepolia Testnet). The
+contract stores: - The <strong>SHA256 hash of the URL</strong>
+(privacy-preserving — the actual URL is not on-chain) - An <strong>IPFS
+content identifier (CID)</strong> pointing to the full evidence package
+(DOM features, scan metadata) - An on-chain <strong>timestamp</strong>
+and the <strong>reporter’s Ethereum address</strong></p>
+<p>Once written, this record <strong>cannot be altered or deleted by
+anyone</strong> — including system administrators. The blockchain’s
+immutability transforms the threat log from a mutable database record
+into a legally defensible, cryptographically verified audit trail.</p>
+<hr />
+<h3>Problem 6 — Security Teams Have No Centralized Visibility</h3>
+<p><strong>The Gap</strong>: End users only see a per-page result. But
+an organization’s <strong>Security Operations Center (SOC)</strong>
+needs a bird’s-eye view: - How many phishing attempts were blocked
+today? - Is the attack rate increasing over time? - Which specific URLs
+were targeted and when? - What is the model’s current accuracy and false
+positive rate?</p>
+<p>Without centralized threat visualization, security analysts are
+flying blind and cannot detect coordinated, large-scale phishing
+campaigns targeting an organization.</p>
+<p><strong>PhishGuard’s Answer</strong>: A dedicated <strong>React-based
+SOC Dashboard</strong> provides security analysts with: - Real-time
+threat counts (Phishing / Suspicious / Safe / Total) - A <strong>7-day
+Security Score trend chart</strong> showing the organization’s threat
+posture over time - A <strong>live, scrollable detection log</strong>
+with full feature vectors per scan - A <strong>global URL
+search</strong> capability across all historical scan data - Model
+performance metrics (accuracy, false positive rate)</p>
+<p>This transforms PhishGuard from a personal browser tool into a
+centralized enterprise threat monitoring platform.</p>
+<hr />
+<h3>Problem 7 — ML Models Become Stale Over Time (Model Drift)</h3>
+<p><strong>The Gap</strong>: Phishing techniques evolve constantly. A
+model trained on data from 6 months ago may perform poorly against
+today’s attacks because: - New phishing keywords emerge (e.g.,
+“covid-relief”, “ukraine-aid”, “AI-verification”) - New attack patterns
+appear (QR code phishing, SMS phishing redirects) - The distribution of
+phishing vs. safe URLs in the real world shifts</p>
+<p>This problem is called <strong>Model Drift</strong> — and it is the
+Achilles’ heel of static ML-based security systems.</p>
+<p><strong>PhishGuard’s Answer</strong>: An <strong>automated MLOps
+Retraining Pipeline</strong> solves this at its root: 1. Users can
+report false negatives (missed phishing) via a dedicated
+<code>/report</code> endpoint. 2. Reported URLs are stored in the
+PostgreSQL database with label <code>User_Reported_Phishing</code>. 3.
+When an admin triggers <code>/admin/retrain</code>, a <strong>background
+task</strong> collects all reports, appends them as new training samples
+to the master dataset CSV, runs a <strong>full XGBoost + MLP Ensemble
+retraining</strong>, and <strong>hot-reloads the new model file into
+memory</strong> — all without restarting the server or causing
+downtime.</p>
+<p>The system continuously improves its own accuracy from real-world
+feedback — a key characteristic of production-grade enterprise ML
+systems.</p>
+<hr />
+<h2>3. Why Existing Solutions Are Inadequate</h2>
+<table>
+<thead>
+<tr>
+<th>Existing Solution</th>
+<th>What It Misses</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Google Safe Browsing</strong></td>
+<td>Reactive blocklist — misses attacks in first 24–72 hrs; no DOM analysis</td>
+</tr>
+<tr>
+<td><strong>Browser built-in warnings</strong></td>
+<td>Simple heuristics only; no ML, no visual analysis, no XAI</td>
+</tr>
+<tr>
+<td><strong>Antivirus software</strong></td>
+<td>Network-level only; no in-page DOM inspection; no blockchain audit</td>
+</tr>
+<tr>
+<td><strong>PhishTank / OpenPhish</strong></td>
+<td>Community-reported databases — days-old data; no real-time inference</td>
+</tr>
+<tr>
+<td><strong>Academic ML classifiers</strong></td>
+<td>URL-string only; no live DOM features; no retraining; no UI</td>
+</tr>
+<tr>
+<td><strong>Enterprise SIEM tools</strong></td>
+<td>Expensive, complex, no browser-native integration; no visual AI</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>4. Scope and Boundaries</h2>
+<p><strong>In Scope:</strong> - Detection of phishing via URL
+heuristics, ML inference, and visual AI - Real-time detection at the
+browser level for every page visited - Blockchain-based immutable
+logging for confirmed threats - SOC dashboard for organizational threat
+monitoring - Automated model retraining from user feedback</p>
+<p><strong>Out of Scope:</strong> - Email phishing / attachment scanning
+- Detection of phishing via phone calls (vishing) or SMS (smishing) -
+Real-time geographic IP threat mapping (planned feature) - Full RBAC
+authentication between analyst roles (planned feature) - Deployment to a
+public cloud (currently local Docker setup)</p>
+<hr />
+<h2>5. Formal Problem Statement</h2>
+<blockquote>
+<p><strong>Current web users and organizational security teams lack a
+unified, real-time defense system capable of detecting phishing attacks
+at the browser level using multiple converging intelligence layers.
+Existing solutions are either reactive blocklists that fail within the
+first 24–72 hours of a campaign, or isolated ML classifiers that analyze
+only URL strings and provide no explainability, no visual detection
+capability, no tamper-proof incident logging, and no mechanism for
+continuous self-improvement. There exists a critical need for an
+end-to-end, browser-native phishing detection platform that integrates
+live DOM feature extraction, multi-layer AI inference (machine learning,
+lexical heuristics, and computer vision), Explainable AI for
+human-readable threat reporting, a blockchain-backed immutable audit
+trail, and an automated MLOps retraining pipeline — all visible through
+a centralized SOC dashboard — to provide proactive, adaptive, and
+trustworthy protection against one of the most prevalent and damaging
+forms of cybercrime.</strong></p>
+</blockquote>
+<hr />
+<h2>6. Research Questions Addressed</h2>
+<ol>
+<li>Can a multi-layer detection engine (ML + Heuristics + Vision +
+   Threat Intel) achieve higher accuracy and lower false positives than any
+   single-layer approach?</li>
+<li>Can live DOM features extracted directly from a browser page
+   significantly improve phishing detection beyond URL-string analysis
+   alone?</li>
+<li>Can visual SSIM-based screenshot comparison effectively identify
+   zero-day UI clone attacks that evade URL-based systems?</li>
+<li>Can a blockchain smart contract serve as a practical, tamper-proof
+   incident logging system within a real-time threat detection
+   pipeline?</li>
+<li>Can an online MLOps retraining loop prevent model drift and sustain
+   detection accuracy as phishing techniques evolve over time?</li>
+</ol>
+    </div>
+</body>
+</html>

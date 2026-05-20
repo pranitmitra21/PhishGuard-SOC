@@ -103,7 +103,7 @@ export default function ThreatLogsTab({
                 {/* Expanded Feature Row */}
                 {expandedRow === log.id && (
                   <tr className="bg-black">
-                    <td colSpan="4" className="px-4 py-3">
+                    <td colSpan="4" className="px-4 py-3 whitespace-normal">
                       <div className="border border-cyber-cyan/20 p-3 relative overflow-hidden bg-cyber-void group">
                         <div className="absolute left-0 top-0 bottom-0 w-1 bg-cyber-cyan"></div>
                         <div className="absolute opacity-[0.03] -top-16 -right-10 pointer-events-none group-hover:opacity-10 transition-opacity duration-500">

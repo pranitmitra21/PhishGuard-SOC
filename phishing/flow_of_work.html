@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flow Of Work</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background-color: #f9fafb;
+        }
+        .container {
+            background: #ffffff;
+            padding: 50px;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: #111827;
+            margin-top: 2em;
+            margin-bottom: 0.5em;
+            font-weight: 700;
+        }
+        h1 { font-size: 2.25rem; border-bottom: 2px solid #e5e7eb; padding-bottom: 0.3em; margin-top: 0; }
+        h2 { font-size: 1.875rem; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.3em; }
+        h3 { font-size: 1.5rem; }
+        p { margin-bottom: 1.25em; }
+        a { color: #2563eb; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        code {
+            background-color: #f3f4f6;
+            padding: 0.2em 0.4em;
+            border-radius: 6px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.875em;
+        }
+        pre {
+            background-color: #1f2937;
+            color: #f9fafb;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        pre code {
+            background-color: transparent;
+            color: inherit;
+            padding: 0;
+        }
+        blockquote {
+            border-left: 4px solid #3b82f6;
+            padding-left: 1rem;
+            color: #4b5563;
+            margin-left: 0;
+            background-color: #eff6ff;
+            padding: 1rem;
+            border-radius: 0 8px 8px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2em 0;
+        }
+        th, td {
+            padding: 0.75rem 1rem;
+            border: 1px solid #e5e7eb;
+            text-align: left;
+        }
+        th {
+            background-color: #f9fafb;
+            font-weight: 600;
+        }
+        tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+        hr {
+            border: 0;
+            height: 1px;
+            background: #e5e7eb;
+            margin: 3em 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>PhishGuard SOC — Detailed Flow of Work</h1>
+<hr />
+<h2>Overview</h2>
+<p>PhishGuard SOC operates as a <strong>distributed, event-driven
+system</strong> with six distinct workflows that activate in response to
+user browser activity, admin commands, or scheduled operations. Each
+workflow is self-contained yet interconnected — the output of one flow
+often becomes the input trigger of another.</p>
+<table>
+<thead>
+<tr>
+<th>Workflow</th>
+<th>Trigger</th>
+<th>Duration</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>URL Detection Pipeline</strong></td>
+<td>User visits any webpage</td>
+<td>~100–800ms</td>
+</tr>
+<tr>
+<td><strong>Chrome Extension Lifecycle</strong></td>
+<td>Tab load / popup open</td>
+<td>~50–200ms</td>
+</tr>
+<tr>
+<td><strong>Visual AI Pipeline</strong></td>
+<td>Password form detected on page</td>
+<td>~200–500ms</td>
+</tr>
+<tr>
+<td><strong>Blockchain Audit Logging</strong></td>
+<td>Phishing verdict confirmed</td>
+<td>~2–10s (async)</td>
+</tr>
+<tr>
+<td><strong>MLOps Retraining Pipeline</strong></td>
+<td>Admin triggers <code>/admin/retrain</code></td>
+<td>~30–120s</td>
+</tr>
+<tr>
+<td><strong>SOC Dashboard Data Flow</strong></td>
+<td>Analyst opens dashboard</td>
+<td>On-demand polling</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>Flow 1 — Master System Architecture Flow</h2>
+<p>This diagram shows how all components of PhishGuard communicate at a
+system level.</p>
+<pre><code>flowchart TD
+    A[&quot;🌐 User Opens Browser Tab&quot;] --&gt; B[&quot;Chrome Extension\nContent Script (content.js)&quot;]
+    B --&gt; C[&quot;Feature Extractor\n8 DOM + URL signals&quot;]
+    C --&gt; D[&quot;Background Service Worker\n(background.js)&quot;]
+    D --&gt;|&quot;POST /detect&quot;| E[&quot;FastAPI Backend\n(main.py)&quot;]
+
+    E --&gt; F{&quot;Tranco\nWhitelist?&quot;}
+    F --&gt;|&quot;YES → Safe 100%&quot;| G[&quot;Return Safe Response&quot;]
+    F --&gt;|&quot;NO → Continue&quot;| H[&quot;WHOIS Domain Age\n(whois_utils.py)&quot;]
+
+    H --&gt; I{&quot;Redis Cache\nHit?&quot;}
+    I --&gt;|&quot;YES → Cached&quot;| G
+    I --&gt;|&quot;NO → Continue&quot;| J[&quot;Google Safe Browsing API\n(threat_intel.py)&quot;]
+
+    J --&gt;|&quot;BLOCKED&quot;| K[&quot;Phishing @ 100%&quot;]
+    J --&gt;|&quot;CLEAR&quot;| L[&quot;XGBoost + MLP Ensemble\nML Inference\n(model_inference.py)&quot;]
+
+    L --&gt; M[&quot;Lexical Heuristics\nEngine\n(heuristics.py)&quot;]
+    M --&gt; N[&quot;Multi-Layer\nDecision Engine&quot;]
+    N --&gt; O[&quot;Final Confidence\n0–100 Score&quot;]
+
+    O --&gt;|&quot;≥80%&quot;| P[&quot;PHISHING&quot;]
+    O --&gt;|&quot;40–79%&quot;| Q[&quot;SUSPICIOUS&quot;]
+    O --&gt;|&quot;&lt;40%&quot;| R[&quot;SAFE&quot;]
+
+    P --&gt; S[&quot;PostgreSQL\nDetectionLog&quot;]
+    Q --&gt; S
+    R --&gt; S
+    S --&gt; T[&quot;Redis Cache\nStore 1hr&quot;]
+
+    P --&gt;|&quot;Async&quot;| U[&quot;Blockchain Logger\n(blockchain_utils.py)&quot;]
+    U --&gt; V[&quot;ThreatLog.sol\nSmart Contract&quot;]
+    V --&gt; W[&quot;IPFS Evidence\nPackage&quot;]
+
+    N --&gt; X[&quot;JSON Response\nto Extension&quot;]
+    X --&gt; Y[&quot;Popup UI\nResult Display&quot;]
+    X --&gt;|&quot;If Phishing\nor Suspicious&quot;| Z[&quot;XAI Warning\nOverlay Injected\ninto Page&quot;]
+
+    AA[&quot;Analyst Browser&quot;] --&gt; AB[&quot;React SOC Dashboard&quot;]
+    AB --&gt;|&quot;GET /stats&quot;| E
+    AB --&gt;|&quot;GET /logs&quot;| E
+    E --&gt; AB
+
+    style P fill:#ff003c,color:#fff
+    style Q fill:#ffb000,color:#000
+    style R fill:#00c853,color:#fff
+    style V fill:#7c4dff,color:#fff
+    style W fill:#7c4dff,color:#fff
+</code></pre>
+<hr />
+<h2>Flow 2 — Chrome Extension Complete Lifecycle</h2>
+<p>This flow describes everything that happens from the moment a user
+navigates to a URL to when they see a result in their browser.</p>
+<pre><code>sequenceDiagram
+    participant User as 👤 User
+    participant Tab as 🌐 Browser Tab
+    participant Content as content.js
+    participant BG as background.js
+    participant API as FastAPI Backend
+    participant Popup as popup.js
+
+    User-&gt;&gt;Tab: Navigates to URL
+    Tab-&gt;&gt;Content: Injected automatically (all_urls match)
+
+    Note over Content: DOM Feature Extraction begins
+
+    Content-&gt;&gt;Content: Read window.location.href → url, url_length
+    Content-&gt;&gt;Content: Detect @ symbol → has_at_symbol
+    Content-&gt;&gt;Content: Count subdomains → num_subdomains
+    Content-&gt;&gt;Content: Check protocol → is_https
+    Content-&gt;&gt;Content: Query password inputs → has_password_field
+    Content-&gt;&gt;Content: Check form.action vs page domain → has_cross_origin_form
+    Content-&gt;&gt;Content: Detect hidden iframes → suspicious_dom_elements
+
+    User-&gt;&gt;Popup: Clicks PhishGuard icon
+    Popup-&gt;&gt;BG: Message: &quot;scan_current_tab&quot;
+    BG-&gt;&gt;Tab: chrome.scripting.executeScript → extract_features
+    Tab-&gt;&gt;Content: Message: &quot;extract_features&quot;
+    Content--&gt;&gt;BG: Returns feature JSON object
+
+    BG-&gt;&gt;API: POST /detect { url, url_length, has_at_symbol, ... }
+
+    API--&gt;&gt;BG: JSON { status, confidence, message, features }
+
+    BG--&gt;&gt;Popup: Forwards API response
+
+    Popup-&gt;&gt;Popup: Renders threat level badge\n(Safe / Suspicious / Phishing)
+    Popup-&gt;&gt;Popup: Renders confidence bar
+    Popup-&gt;&gt;Popup: Renders XAI reasons list
+
+    alt Status is Phishing or Suspicious
+        BG-&gt;&gt;Tab: chrome.scripting.executeScript\n→ inject_overlay
+        Tab-&gt;&gt;Content: Message: &quot;inject_overlay&quot; + { status, confidence, message }
+        Content-&gt;&gt;Tab: Creates full-screen warning div
+        Content-&gt;&gt;Tab: Appends to document.body
+        Content-&gt;&gt;Tab: Blocks page scroll (overflow: hidden)
+        User-&gt;&gt;Tab: Clicks &quot;Proceed Anyway&quot; (optional)
+        Tab-&gt;&gt;Content: Event listener removes overlay
+    end
+</code></pre>
+<h3>Step-by-Step: Extension Feature Extraction</h3>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Action</th>
+<th>Signal Captured</th>
+<th>Data Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Read <code>window.location.href</code></td>
+<td>Full URL string</td>
+<td><code>string</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>Measure URL string length</td>
+<td>URL length feature</td>
+<td><code>int</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>Check <code>url.includes('@')</code></td>
+<td>AT symbol in URL</td>
+<td><code>bool</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>Split hostname by <code>.</code></td>
+<td>Subdomain count</td>
+<td><code>int</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td>Check <code>location.protocol === 'https:'</code></td>
+<td>HTTPS status</td>
+<td><code>bool</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>querySelectorAll('input[type="password"]')</code></td>
+<td>Password form presence</td>
+<td><code>bool</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td>Compare <code>form.action</code> root to <code>hostname</code> root</td>
+<td>Cross-origin form (credential theft)</td>
+<td><code>bool</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td>Find hidden <code>iframe</code> elements</td>
+<td>Clickjacking / exfiltration iframes</td>
+<td><code>int</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Output payload sent to backend:</strong></p>
+<pre><code>{
+  &quot;url&quot;: &quot;http://paypa1-secure.com/login&quot;,
+  &quot;url_length&quot;: 34,
+  &quot;has_at_symbol&quot;: false,
+  &quot;num_subdomains&quot;: 1,
+  &quot;is_https&quot;: false,
+  &quot;num_redirects&quot;: 0,
+  &quot;suspicious_dom_elements&quot;: 3,
+  &quot;has_password_field&quot;: true,
+  &quot;has_cross_origin_form&quot;: true
+}
+</code></pre>
+<hr />
+<h2>Flow 3 — URL Detection 5-Tier Waterfall (Core Pipeline)</h2>
+<p>This is the central intelligence flow executed on the FastAPI backend
+for every URL scan request.</p>
+<pre><code>flowchart TD
+    START([&quot;📥 POST /detect\nReceive features JSON&quot;]) --&gt; T0
+
+    T0[&quot;🔑 SHA256 Hash URL\nurl_hash = sha256(url)&quot;]
+    T0 --&gt; T1
+
+    subgraph TIER1[&quot;⚡ TIER 1 — Tranco Whitelist (O1 Lookup)&quot;]
+        T1{&quot;root_domain\nin TRANCO_WHITELIST?&quot;}
+    end
+
+    T1 --&gt;|&quot;YES&quot;| R1[&quot;✅ Status: Safe\nConfidence: 100%\nMessage: Top 1M Whitelist\nReturn Immediately&quot;]
+    T1 --&gt;|&quot;NO&quot;| T2A
+
+    subgraph TIER2[&quot;🕐 TIER 2 — WHOIS Domain Age&quot;]
+        T2A[&quot;Call get_domain_age_days()\nQuery python-whois&quot;]
+        T2A --&gt; T2B[&quot;Store: domain_age_days\n(-1 if WHOIS fails/timeout)&quot;]
+    end
+
+    T2B --&gt; T3
+
+    subgraph TIER3[&quot;⚡ TIER 3 — Redis Cache&quot;]
+        T3{&quot;redis.get(\nphish_cache:url_hash\n)?&quot;}
+    end
+
+    T3 --&gt;|&quot;HIT&quot;| R3[&quot;Return Cached Result\n(Expires in 1 hour)\ncached: true&quot;]
+    T3 --&gt;|&quot;MISS&quot;| T35
+
+    subgraph TIER35[&quot;🌐 TIER 3.5 — Google Safe Browsing API&quot;]
+        T35[&quot;POST to Safe Browsing v4\nThreat types: MALWARE,\nSOCIAL_ENGINEERING,\nUNWANTED_SOFTWARE&quot;]
+        T35 --&gt; T35B{&quot;matches\nin response?&quot;}
+    end
+
+    T35B --&gt;|&quot;YES&quot;| R35[&quot;🔴 Status: Phishing\nConfidence: 100%\nLog to DB + BC\nCache 1hr\nReturn&quot;]
+    T35B --&gt;|&quot;NO / API Down&quot;| T4
+
+    subgraph TIER4[&quot;🤖 TIER 4 — XGBoost + MLP Ensemble ML&quot;]
+        T4[&quot;Extract feature array\n[url_length, has_at,\nnum_subdomains, is_https,\nnum_redirects,\nsuspicious_dom_elements]&quot;]
+        T4 --&gt; T4B[&quot;model.predict_proba()\nP(safe), P(suspicious),\nP(phishing)&quot;]
+        T4B --&gt; T4C[&quot;threat_score =\nP(suspicious)×50 +\nP(phishing)×100&quot;]
+    end
+
+    T4C --&gt; T45
+
+    subgraph TIER45[&quot;🔍 TIER 4.5 — Lexical Heuristics&quot;]
+        T45[&quot;Shannon Entropy\nof hostname&quot;]
+        T45 --&gt; T45B[&quot;Levenshtein Typosquatting\nvs 20 top brands&quot;]
+        T45B --&gt; T45C[&quot;Brand in Subdomain\ncheck&quot;]
+        T45C --&gt; T45D[&quot;Suspicious Keyword\ndensity count&quot;]
+        T45D --&gt; T45E[&quot;heuristic_risk_score\n+ reasons list&quot;]
+    end
+
+    T45E --&gt; T5
+
+    subgraph TIER5[&quot;⚖️ TIER 5 — Multi-Layer Decision Engine&quot;]
+        T5[&quot;base = ML threat_score&quot;]
+        T5 --&gt; T5A[&quot;+ heuristic_risk_score&quot;]
+        T5A --&gt; T5B{&quot;is_typosquat?&quot;}
+        T5B --&gt;|&quot;YES&quot;| T5C[&quot;floor at 85%&quot;]
+        T5B --&gt;|&quot;NO&quot;| T5D
+        T5C --&gt; T5D
+        T5D{&quot;has_cross_origin_form?&quot;}
+        T5D --&gt;|&quot;YES&quot;| T5E[&quot;floor at 95%\nAdd: Zero-Click Theft reason&quot;]
+        T5D --&gt;|&quot;NO&quot;| T5F
+        T5E --&gt; T5F
+        T5F{&quot;domain_age_days?&quot;}
+        T5F --&gt;|&quot;&lt; 30 days&quot;| T5G[&quot;× 1.5 (new domain spike)&quot;]
+        T5F --&gt;|&quot;&gt; 365 days&quot;| T5H[&quot;× 0.4 or 0.8\n(established domain)&quot;]
+        T5F --&gt;|&quot;-1 unknown&quot;| T5I[&quot;No adjustment&quot;]
+        T5G --&gt; T5J
+        T5H --&gt; T5J
+        T5I --&gt; T5J
+        T5J[&quot;cap at 99.9%\nfinal_confidence&quot;]
+    end
+
+    T5J --&gt; VERDICT
+
+    subgraph VERDICT[&quot;🏁 Final Verdict&quot;]
+        V1{&quot;final_confidence?&quot;}
+        V1 --&gt;|&quot;≥ 80&quot;| V2[&quot;🔴 PHISHING&quot;]
+        V1 --&gt;|&quot;40–79&quot;| V3[&quot;🟡 SUSPICIOUS&quot;]
+        V1 --&gt;|&quot;&lt; 40&quot;| V4[&quot;🟢 SAFE&quot;]
+    end
+
+    V2 --&gt; DB[&quot;💾 Save to PostgreSQL\nDetectionLog&quot;]
+    V3 --&gt; DB
+    V4 --&gt; DB
+    DB --&gt; CACHE[&quot;🔴 Cache in Redis\nTTL: 3600s&quot;]
+    V2 --&gt;|&quot;Async Background Task&quot;| BC[&quot;⛓️ Blockchain Logger&quot;]
+    CACHE --&gt; RESP[&quot;📤 JSON Response\n{status, confidence,\ndomain_age_days,\ncached, message,\nfeatures, is_whitelisted}&quot;]
+</code></pre>
+<h3>Decision Thresholds Reference</h3>
+<table>
+<thead>
+<tr>
+<th>Condition</th>
+<th>Adjustment</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Heuristic risk &gt; 0</td>
+<td>+ heuristic score</td>
+<td>Stack evidence from multiple layers</td>
+</tr>
+<tr>
+<td><code>is_typosquat = true</code></td>
+<td>Floor → 85% minimum</td>
+<td>Typosquatting is near-definitive phishing</td>
+</tr>
+<tr>
+<td><code>has_cross_origin_form = true</code></td>
+<td>Floor → 95% minimum</td>
+<td>Password theft to external domain is critical</td>
+</tr>
+<tr>
+<td><code>domain_age_days &lt; 30</code></td>
+<td>× 1.5 (capped at 99.9%)</td>
+<td>New domains are extremely high-risk</td>
+</tr>
+<tr>
+<td><code>domain_age_days &gt; 365</code></td>
+<td>× 0.4 (or × 0.8 if typosquat)</td>
+<td>Established domains are lower risk</td>
+</tr>
+<tr>
+<td>final ≥ 80%</td>
+<td>→ “Phishing”</td>
+<td>Block + blockchain log</td>
+</tr>
+<tr>
+<td>final 40–79%</td>
+<td>→ “Suspicious”</td>
+<td>Warning</td>
+</tr>
+<tr>
+<td>final &lt; 40%</td>
+<td>→ “Safe”</td>
+<td>Allow</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>Flow 4 — Visual AI (Computer Vision) Pipeline</h2>
+<p>Activated when the Chrome extension detects a <strong>password
+form</strong> on the current page.</p>
+<pre><code>flowchart TD
+    A[&quot;👁️ Trigger:\ncontent.js detects\npassword input on page&quot;] --&gt; B
+
+    B[&quot;background.js:\nchrome.tabs.captureVisibleTab()\n→ base64 PNG screenshot&quot;]
+    B --&gt; C[&quot;POST /vision-scan\n{url, screenshot_base64}&quot;]
+
+    C --&gt; D[&quot;vision_engine.py:\nscan_screenshot()&quot;]
+
+    D --&gt; E[&quot;decode_base64_image()\nstrip Data URI prefix\nbase64.b64decode()\nnp.frombuffer()→ OpenCV mat&quot;]
+
+    E --&gt; F[&quot;Load reference_images/\ndirectory contents\n*.png, *.jpg, *.jpeg&quot;]
+
+    F --&gt; G[&quot;For each reference image:&quot;]
+
+    G --&gt; H[&quot;calculate_ssim(target, ref)\n1. Resize ref to match target dims\n2. Convert both to grayscale\n3. skimage.ssim(gray1, gray2)\n→ score 0.0–1.0&quot;]
+
+    H --&gt; I{&quot;score &gt;\nhighest so far?&quot;}
+    I --&gt;|&quot;YES&quot;| J[&quot;Update:\nhighest_similarity = score\nmatched_brand = filename&quot;]
+    I --&gt;|&quot;NO&quot;| K[&quot;Next reference image&quot;]
+    J --&gt; K
+    K --&gt; L{&quot;More reference\nimages?&quot;}
+    L --&gt;|&quot;YES&quot;| G
+    L --&gt;|&quot;NO&quot;| M
+
+    M{&quot;highest_similarity\n≥ 0.80?&quot;}
+    M --&gt;|&quot;YES&quot;| N[&quot;🔴 is_clone = TRUE\nmatched_brand = brand name\nsimilarity_score = score×100&quot;]
+    M --&gt;|&quot;NO&quot;| O[&quot;✅ is_clone = FALSE\nNo known UI clone detected&quot;]
+
+    N --&gt; P[&quot;Return to extension:\n{is_clone: true,\nmatched_brand: 'Microsoft',\nsimilarity_score: 91.3,\nmessage: 'UI matches Microsoft\nby 91.3%'}&quot;]
+
+    O --&gt; Q[&quot;Return: {is_clone: false,\nmatched_brand: null,\nsimilarity_score: 23.1}&quot;]
+
+    P --&gt; R[&quot;Extension overlays\nVisual Phishing Warning\nwith brand name and\nsimilarity score&quot;]
+</code></pre>
+<h3>SSIM Algorithm Internals</h3>
+<pre><code>Step 1: Extension captures tab screenshot → base64 PNG
+Step 2: Backend decodes PNG → NumPy array → OpenCV BGR matrix
+Step 3: For each brand reference image in /reference_images/:
+   a. Resize reference image to match target screenshot dimensions
+   b. Convert both to grayscale (single-channel)
+   c. Compute SSIM:
+      SSIM(x,y) = [2μxμy + C1][2σxy + C2] / [(μx² + μy² + C1)(σx² + σy² + C2)]
+      where: μ = local mean, σ = local variance, C1/C2 = stability constants
+   d. Score range: 0.0 (completely different) → 1.0 (structurally identical)
+Step 4: Track brand with highest similarity score
+Step 5: Threshold check: if max_score ≥ 0.80 → IS_CLONE = true
+</code></pre>
+<hr />
+<h2>Flow 5 — Blockchain Audit Logging Flow</h2>
+<p>Executes <strong>asynchronously</strong> as a FastAPI background task
+— never blocking the HTTP response.</p>
+<pre><code>sequenceDiagram
+    participant API as FastAPI main.py
+    participant BG as BackgroundTask Queue
+    participant BU as blockchain_utils.py
+    participant W3 as Web3.py
+    participant HH as Ethereum Sepolia Testnet Node
+    participant SC as ThreatLog.sol
+    participant IPFS as IPFS (Pinata)
+
+    API-&gt;&gt;API: final verdict = &quot;Phishing&quot;
+    API-&gt;&gt;BG: background_tasks.add_task(\nprocess_blockchain_bg,\nurl_hash, features_dict)
+    API--&gt;&gt;Extension: Immediate JSON response\n(NOT waiting for blockchain)
+
+    Note over BG: Runs after HTTP response is sent
+
+    BG-&gt;&gt;BU: log_to_blockchain(url_hash, features_dict)
+    BU-&gt;&gt;W3: w3.is_connected() ?
+    W3-&gt;&gt;HH: ETH RPC health check
+    HH--&gt;&gt;W3: Connected ✅
+
+    BU-&gt;&gt;SC: contract.functions.isLogged(url_hash).call()
+    SC--&gt;&gt;BU: false → Not yet logged
+
+    BU-&gt;&gt;IPFS: upload_evidence_to_ipfs(\nurl_hash,\nfeatures_dict)
+    Note over IPFS: Packages: URL hash +\nall DOM features +\ntimestamp as JSON\nPins to IPFS node
+    IPFS--&gt;&gt;BU: Returns ipfs_hash (CID)\n&quot;QmXk3d9...Ev1d3nc3&quot;
+
+    BU-&gt;&gt;SC: contract.functions.addLog(\nurl_hash,\nipfs_hash\n).transact({from: account})
+
+    SC-&gt;&gt;SC: logs.push(PhishingLog{\n  urlHash: url_hash,\n  ipfsHash: ipfs_hash,\n  timestamp: block.timestamp,\n  reporter: msg.sender\n})
+    SC-&gt;&gt;SC: emit LogAdded(urlHash,\nipfsHash, timestamp, reporter)
+
+    HH--&gt;&gt;W3: tx_hash
+    W3-&gt;&gt;HH: wait_for_transaction_receipt(tx_hash)
+    HH--&gt;&gt;W3: receipt { status: 1 }
+    W3--&gt;&gt;BU: Transaction confirmed ✅
+    BU-&gt;&gt;BU: Print: &quot;Successfully logged\n{url_hash} with {ipfs_hash}&quot;
+</code></pre>
+<h3>On-Chain Data Structure</h3>
+<pre><code>ThreatLog Contract Storage:
+┌─────────────────────────────────────────────────────────┐
+│ PhishingLog Entry #N                                     │
+│ ├── urlHash:   &quot;a3f4b2...8e9d&quot; (SHA256 of URL)          │
+│ ├── ipfsHash:  &quot;QmXk3d...nc3&quot; (IPFS CID of evidence)    │
+│ ├── timestamp: 1712347890 (Unix epoch, block time)       │
+│ └── reporter:  0x3f4b...2e8a (Ethereum address)          │
+└─────────────────────────────────────────────────────────┘
+
+IPFS Evidence Package (linked from ipfsHash):
+{
+  &quot;url_hash&quot;: &quot;a3f4b2...8e9d&quot;,
+  &quot;url_length&quot;: 78,
+  &quot;has_at_symbol&quot;: false,
+  &quot;num_subdomains&quot;: 3,
+  &quot;is_https&quot;: false,
+  &quot;suspicious_dom_elements&quot;: 5,
+  &quot;has_cross_origin_form&quot;: true,
+  &quot;heuristics&quot;: {
+    &quot;is_typosquat&quot;: true,
+    &quot;entropy&quot;: 4.73,
+    &quot;reasons&quot;: [&quot;Typosquatting 'paypal'&quot;, &quot;High entropy&quot;]
+  }
+}
+</code></pre>
+<hr />
+<h2>Flow 6 — MLOps Automated Retraining Pipeline</h2>
+<p>Triggered by admin via <code>POST /admin/retrain</code>. Ensures the
+XGBoost + MLP Ensemble model stays current as phishing patterns evolve.</p>
+<pre><code>flowchart TD
+    A([&quot;👨‍💼 Admin:\nPOST /admin/retrain&quot;]) --&gt; B
+
+    B[&quot;FastAPI:\nbackground_tasks.add_task(\nbackground_retrain)&quot;]
+    B --&gt; C[&quot;Return immediately:\n'Retraining initiated'&quot;]
+
+    C --&gt; D[&quot;Background: run_pipeline()&quot;]
+
+    D --&gt; E[&quot;Open PostgreSQL Session\nSessionLocal()&quot;]
+    E --&gt; F[&quot;Query: DetectionLog\nWHERE status =\n'User_Reported_Phishing'&quot;]
+    F --&gt; G{&quot;Any reports\nfound?&quot;}
+    G --&gt;|&quot;NO&quot;| H[&quot;Print: No new reports\nSkip retraining\nreturn False&quot;]
+    G --&gt;|&quot;YES, N reports&quot;| I
+
+    I[&quot;For each report:\nBuild feature row:\n{\n  url_length,\n  has_at_symbol: 0/1,\n  num_subdomains,\n  is_https: 0/1,\n  num_redirects: 0,\n  suspicious_dom_elements,\n  label: 2  ← Phishing\n}&quot;]
+
+    I --&gt; J[&quot;Update DB: status →\n'Phishing'\n(prevents re-ingestion)&quot;]
+    J --&gt; K[&quot;db.commit()\ndb.close()&quot;]
+
+    K --&gt; L[&quot;df_new = pd.DataFrame(new_data)&quot;]
+    L --&gt; M{&quot;processed_features.csv\nexists?&quot;}
+    M --&gt;|&quot;YES&quot;| N[&quot;df_new.to_csv(\nprocessed_features.csv,\nmode='a',\nheader=False\n) ← APPEND&quot;]
+    M --&gt;|&quot;NO&quot;| O[&quot;Error: Base dataset\nnot found\nreturn False&quot;]
+
+    N --&gt; P[&quot;train_model()\n↓\nLoad processed_features.csv\n↓\nX = features columns\ny = label column\n↓\ntrain_test_split 80/20\n↓\nRandomForestClassifier.fit(X_train, y_train)\n↓\njoblib.dump → xgboost_mlp_model.pkl&quot;]
+
+    P --&gt; Q[&quot;run_pipeline() returns True&quot;]
+    Q --&gt; R[&quot;background_retrain()\nchecks success == True&quot;]
+    R --&gt; S[&quot;reload_model()\n↓\njoblib.load(\nxgboost_mlp_model.pkl)\n↓\nglobal model = new_model&quot;]
+
+    S --&gt; T[&quot;✅ Live model updated\nZero server downtime\nAll new /detect calls\nuse retrained model&quot;]
+
+    style T fill:#00c853,color:#fff
+    style H fill:#ff6d00,color:#fff
+    style O fill:#ff003c,color:#fff
+</code></pre>
+<h3>Retraining Data Flow</h3>
+<pre><code>User Action          →  Report stored in DB (status: User_Reported_Phishing)
+Admin Trigger        →  POST /admin/retrain → BackgroundTask invoked
+Pipeline Step 1      →  Query DB for all User_Reported_Phishing records
+Pipeline Step 2      →  Convert reports to feature rows (label=2/Phishing)
+Pipeline Step 3      →  Append rows to processed_features.csv (~7.7MB base)
+Pipeline Step 4      →  Re-run RandomForestClassifier.fit() on full dataset
+Pipeline Step 5      →  Save new xgboost_mlp_model.pkl (overwrites old)
+Pipeline Step 6      →  Hot-reload: global model variable = joblib.load(pkl)
+Result               →  All future /detect calls now use the updated model
+Downtime             →  ZERO — server never restarts
+</code></pre>
+<hr />
+<h2>Flow 7 — SOC Dashboard Data Flow</h2>
+<p>How the React frontend communicates with the backend to render the
+analyst’s view.</p>
+<pre><code>sequenceDiagram
+    participant Analyst as 👨‍💻 Security Analyst
+    participant React as React Dashboard (App.jsx)
+    participant API as FastAPI Backend
+
+    Analyst-&gt;&gt;React: Opens dashboard in browser
+
+    React-&gt;&gt;API: GET /stats
+    API-&gt;&gt;API: COUNT all DetectionLog rows\nBREAK DOWN by status\nGENERATE 7-day progression
+    API--&gt;&gt;React: { total_scanned, phishing_detected,\nsuspicious_detected, safe_detected,\nmodel_accuracy: 94.5,\nfalse_positive_rate: 1.2,\nprogression: [{name:&quot;Mon&quot;, score:87}, ...] }
+
+    React-&gt;&gt;React: Render KPI cards\n(Total / Phishing / Suspicious / Safe)
+    React-&gt;&gt;React: Render Recharts LineChart\nfrom progression array
+    React-&gt;&gt;React: Render accuracy + FPR metrics
+
+    React-&gt;&gt;API: GET /logs?skip=0&amp;limit=20
+    API-&gt;&gt;API: Query DetectionLog\nORDER BY timestamp DESC\nOFFSET 0 LIMIT 20
+    API--&gt;&gt;React: Array of LogOut schema objects\n[{id, url, status, confidence,\ntimestamp, logged_to_blockchain, ...}]
+
+    React-&gt;&gt;React: Render scrollable log table\nColor-coded rows by status
+
+    loop Poll every 30 seconds
+        React-&gt;&gt;API: GET /stats
+        React-&gt;&gt;API: GET /logs?skip=0&amp;limit=20
+        API--&gt;&gt;React: Updated data
+        React-&gt;&gt;React: Re-render components
+    end
+
+    Analyst-&gt;&gt;React: Types in search box
+    React-&gt;&gt;React: Client-side filter\nlog entries by URL text
+
+    Analyst-&gt;&gt;React: Clicks &quot;Retrain Model&quot;
+    React-&gt;&gt;API: POST /admin/retrain
+    API--&gt;&gt;React: { message: &quot;Retraining initiated&quot; }
+    React-&gt;&gt;React: Show success toast
+</code></pre>
+<h3>API Endpoints Used by Dashboard</h3>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Method</th>
+<th>Purpose</th>
+<th>Response Fields</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/stats</code></td>
+<td>GET</td>
+<td>Aggregate metrics + 7-day chart</td>
+<td><code>total_scanned</code>, <code>phishing_detected</code>, <code>suspicious_detected</code>, <code>safe_detected</code>, <code>model_accuracy</code>, <code>false_positive_rate</code>, <code>progression[]</code></td>
+</tr>
+<tr>
+<td><code>/logs</code></td>
+<td>GET</td>
+<td>Paginated detection history</td>
+<td><code>id</code>, <code>url</code>, <code>status</code>, <code>confidence</code>, <code>timestamp</code>, <code>logged_to_blockchain</code></td>
+</tr>
+<tr>
+<td><code>/admin/retrain</code></td>
+<td>POST</td>
+<td>Trigger MLOps pipeline</td>
+<td><code>message</code></td>
+</tr>
+<tr>
+<td><code>/detect</code></td>
+<td>POST</td>
+<td>Manual URL scan from SOC</td>
+<td>Full detection response</td>
+</tr>
+<tr>
+<td><code>/report</code></td>
+<td>POST</td>
+<td>Mark URL as phishing</td>
+<td><code>message</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>Flow 8 — End-to-End Complete User Journey</h2>
+<p>This traces the <strong>complete lifecycle</strong> from a user
+visiting a phishing URL to the threat being permanently recorded.</p>
+<pre><code>TIME 0ms     │ User types &quot;paypa1-secure.com/login&quot; into browser address bar
+             │
+TIME 10ms    │ Browser loads page, Chrome injects content.js
+             │
+TIME 30ms    │ content.js executes:
+             │  ├── url = &quot;http://paypa1-secure.com/login&quot;
+             │  ├── url_length = 36
+             │  ├── has_at_symbol = false
+             │  ├── num_subdomains = 1
+             │  ├── is_https = false ← SUSPICIOUS
+             │  ├── has_password_field = true
+             │  ├── has_cross_origin_form = true ← CRITICAL
+             │  └── suspicious_dom_elements = 7
+             │
+TIME 50ms    │ User clicks PhishGuard icon → popup.js opens
+             │ background.js calls extract_features → content.js
+             │ Features JSON assembled
+             │
+TIME 60ms    │ POST /detect sent to FastAPI backend
+             │
+TIME 62ms    │ TIER 1: SHA256(&quot;http://paypa1-secure.com/login&quot;)
+             │         &quot;paypa1-secure.com&quot; NOT in Tranco whitelist → proceed
+             │
+TIME 120ms   │ TIER 2: WHOIS query for &quot;paypa1-secure.com&quot;
+             │         domain_age_days = 3 ← BRAND NEW DOMAIN (HIGH RISK)
+             │
+TIME 125ms   │ TIER 3: Redis cache miss → proceed
+             │
+TIME 250ms   │ TIER 3.5: Google Safe Browsing check
+             │           API returns: no matches (new domain, not yet in list)
+             │           → proceed to ML
+             │
+TIME 260ms   │ TIER 4: XGBoost + MLP Ensemble inference
+             │         features_array = [36, 0, 1, 0, 0, 7]
+             │         P(safe)=0.02, P(suspicious)=0.18, P(phishing)=0.80
+             │         threat_score = (0.18×50) + (0.80×100) = 89.0
+             │
+TIME 270ms   │ TIER 4.5: Heuristics engine
+             │           domain = &quot;paypa1-secure&quot;
+             │           → Levenshtein(&quot;paypa1&quot;, &quot;paypal&quot;) = 1 ← TYPOSQUAT!
+             │           → heuristic_risk_score = 40.0
+             │           → reasons = [&quot;Typosquatting 'paypal'&quot;]
+             │           → is_https = false AND has_password = true
+             │           → suspicious_dom_elements += 2 → total = 9
+             │
+TIME 275ms   │ TIER 5: Decision Engine
+             │         base = 89.0 + 40.0 = 129.0 → capped at 99.9
+             │         is_typosquat = true → floor at 85% (already above)
+             │         has_cross_origin_form = true → floor at 95% (already above)
+             │         domain_age_days = 3 (&lt;30) → × 1.5 → 99.9 (cap reached)
+             │         final_confidence = 99.9%
+             │         status = &quot;PHISHING&quot;
+             │
+TIME 280ms   │ Save to PostgreSQL DetectionLog
+             │ Cache result in Redis (TTL: 3600s)
+             │ Queue BackgroundTask: blockchain logging
+             │
+TIME 285ms   │ HTTP Response returned to extension:
+             │   {
+             │     &quot;status&quot;: &quot;Phishing&quot;,
+             │     &quot;confidence&quot;: 99.9,
+             │     &quot;message&quot;: &quot;Typosquatting 'paypal' | Zero-Click Theft: ...&quot;,
+             │     &quot;domain_age_days&quot;: 3,
+             │     &quot;logged_to_blockchain&quot;: true
+             │   }
+             │
+TIME 290ms   │ popup.js renders:
+             │   🔴 PHISHING — 99.9% confidence
+             │   ⚠️ Typosquatting detected (mimicking 'paypal')
+             │   ⚠️ Zero-Click Theft: Password form submits to external domain
+             │   Domain Age: 3 days old
+             │
+TIME 295ms   │ background.js injects overlay into page tab
+             │ Full-screen red warning appears over the phishing site:
+             │   &quot;CRITICAL SECURITY ALERT: PHISHING&quot;
+             │   &quot;PhishGuard AI has blocked this page.&quot;
+             │   XAI reasons displayed
+             │
+TIME 2000ms  │ [ASYNC - user unaffected]
+             │ BackgroundTask runs: log_to_blockchain()
+             │ IPFS evidence packaged with all features
+             │ ThreatLog.sol: addLog(url_hash, ipfs_hash) called
+             │ Transaction mined on Ethereum Sepolia Testnet
+             │ Permanent on-chain record created ✅
+             │
+TIME 2500ms  │ [SOC Dashboard - in parallel]
+             │ Security analyst sees new PHISHING entry in live log
+             │ 7-day security score chart updates downward
+             │ Blockchain icon shows: ⛓️ Logged
+</code></pre>
+<hr />
+<h2>Flow 9 — Data Storage Architecture</h2>
+<pre><code>flowchart LR
+    subgraph MEMORY[&quot;In-Memory (Process Start)&quot;]
+        TW[&quot;Tranco Whitelist\nPython set()\n~1M domains\nO(1) lookup&quot;]
+        XGBoost+MLP[&quot;XGBoost + MLP Ensemble Model\nxgboost_mlp_model.pkl\n~12MB loaded\nPredict in ms&quot;]
+    end
+
+    subgraph REDIS[&quot;Redis (Cache Layer)&quot;]
+        RC[&quot;phish_cache:hash\nTTL: 3600s (normal)\nTTL: 86400s (reported)\nKey: SHA256(url)&quot;]
+    end
+
+    subgraph POSTGRES[&quot;PostgreSQL (Persistent Store)&quot;]
+        DL[&quot;DetectionLog Table\n────────────────\nid (PK)\nurl (TEXT)\nurl_hash (TEXT, unique)\nstatus (VARCHAR)\nconfidence (FLOAT)\ntimestamp (DATETIME)\nlogged_to_blockchain (BOOL)\nurl_length (INT)\nhas_at_symbol (BOOL)\nnum_subdomains (INT)\nis_https (BOOL)\nsuspicious_dom_elements (INT)&quot;]
+    end
+
+    subgraph BLOCKCHAIN[&quot;Blockchain (Immutable Log)&quot;]
+        SC[&quot;ThreatLog.sol\nPhishingLog[]\n────────────\nurlHash (string)\nipfsHash (string)\ntimestamp (uint256)\nreporter (address)&quot;]
+        IP[&quot;IPFS\nEvidence JSON\nCID pointer&quot;]
+        SC --&gt; IP
+    end
+
+    subgraph FILESYSTEM[&quot;Filesystem (ML Artifacts)&quot;]
+        CSV[&quot;processed_features.csv\n~7.7MB feature dataset&quot;]
+        PKL[&quot;xgboost_mlp_model.pkl\n~12MB trained model&quot;]
+        REF[&quot;reference_images/\nbrand screenshot library&quot;]
+        TR[&quot;tranco.txt\n~15MB domain list&quot;]
+    end
+
+    API[&quot;FastAPI /detect&quot;] --&gt; MEMORY
+    API --&gt; REDIS
+    API --&gt; POSTGRES
+    API --&gt;|&quot;async&quot;| BLOCKCHAIN
+    ML[&quot;ML Training&quot;] --&gt; FILESYSTEM
+    VIS[&quot;Vision Engine&quot;] --&gt; REF
+</code></pre>
+<hr />
+<h2>Summary: Flow Timing Overview</h2>
+<table>
+<thead>
+<tr>
+<th>Flow</th>
+<th>Trigger</th>
+<th>Total Time</th>
+<th>Blocking?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Whitelist hit</td>
+<td>Any URL on Tranco</td>
+<td>~62ms</td>
+<td>Yes (sync, but fast)</td>
+</tr>
+<tr>
+<td>Cache hit</td>
+<td>Repeat URL</td>
+<td>~65ms</td>
+<td>Yes (sync, but fast)</td>
+</tr>
+<tr>
+<td>Full ML pipeline</td>
+<td>New unknown URL</td>
+<td>~280–600ms</td>
+<td>Yes (sync)</td>
+</tr>
+<tr>
+<td>Visual AI scan</td>
+<td>Password form detected</td>
+<td>~200–500ms</td>
+<td>Yes (sync)</td>
+</tr>
+<tr>
+<td>Blockchain logging</td>
+<td>Phishing verdict</td>
+<td>~2,000–10,000ms</td>
+<td><strong>No (async background)</strong></td>
+</tr>
+<tr>
+<td>MLOps retraining</td>
+<td>Admin trigger</td>
+<td>~30,000–120,000ms</td>
+<td><strong>No (async background)</strong></td>
+</tr>
+<tr>
+<td>SOC dashboard refresh</td>
+<td>30s interval</td>
+<td>~100ms per request</td>
+<td>No (independent)</td>
+</tr>
+</tbody>
+</table>
+    </div>
+</body>
+</html>

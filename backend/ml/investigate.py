@@ -33,12 +33,13 @@ def get_ssl_cert(domain: str, url: str = "") -> dict:
 
 
 def get_dns_records(domain: str) -> dict:
-    records = {"A": [], "MX": []}
+    records = {"A": [], "MX": [], "TXT": []}
 
-    # Speed fix: explicit lifetime=2 (seconds) per query — previously no timeout, could hang.
-    # Removed TXT record lookup — unused by the ML model, was pure wasted latency.
+    # Speed fix: explicit lifetime (seconds) per query.
+    # Use reliable public DNS (Google/Cloudflare) to bypass slow local DNS timeouts.
     resolver = dns.resolver.Resolver()
-    resolver.lifetime = 2.0   # total time budget for all retries per query type
+    resolver.nameservers = ['8.8.8.8', '1.1.1.1']
+    resolver.lifetime = 3.0   # total time budget for all retries per query type
 
     try:
         answers = resolver.resolve(domain, 'A')
@@ -51,6 +52,13 @@ def get_dns_records(domain: str) -> dict:
         answers = resolver.resolve(domain, 'MX')
         for rdata in answers:
             records["MX"].append(str(rdata.exchange))
+    except Exception:
+        pass
+        
+    try:
+        answers = resolver.resolve(domain, 'TXT')
+        for rdata in answers:
+            records["TXT"].append(str(rdata))
     except Exception:
         pass
 

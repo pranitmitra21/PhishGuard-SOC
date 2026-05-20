@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 # Must set these before importing main
 os.environ["JWT_SECRET"] = "test_secret_key_123"
 os.environ["ADMIN_SECURE_PIN"] = "TEST_PIN_123"
+os.environ["DATABASE_URL"] = "sqlite:///./test_phishguard.db"
 
 from main import app
 from database import engine

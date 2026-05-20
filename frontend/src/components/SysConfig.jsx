@@ -28,6 +28,7 @@ export default function SysConfig() {
       await axios.put(`${API_URL}/api/admin/config`, config);
       alert("System Configuration Saved Successfully.");
     } catch (err) {
+      console.error(err);
       alert("Failed to save config.");
     }
   };
@@ -91,7 +92,7 @@ export default function SysConfig() {
                 onChange={(e) => setConfig({...config, enable_blockchain_logging: e.target.checked})}
                 className="w-5 h-5 accent-cyber-cyan bg-black border border-cyber-cyan/50"
               />
-              <span className="text-sm uppercase group-hover:text-cyber-cyan transition-colors">Enable Polygon Blockchain Logging</span>
+              <span className="text-sm uppercase group-hover:text-cyber-cyan transition-colors">Enable Sepolia Blockchain Logging</span>
             </label>
             <label className="flex items-center gap-3 cursor-pointer group">
               <input 
