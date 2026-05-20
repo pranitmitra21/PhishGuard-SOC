@@ -178,7 +178,10 @@ function processAndInject(features, tabId) {
             // Fail open if the backend server is down, so we don't break the user's browsing experience
             chrome.tabs.get(tabId, (tab) => {
                 if (chrome.runtime.lastError || !tab) return;
-                chrome.tabs.sendMessage(tabId, { action: "update_overlay", data: { status: "Safe" } });
+                // Add a small delay to ensure the pending overlay had time to render before we destroy it
+                setTimeout(() => {
+                    chrome.tabs.sendMessage(tabId, { action: "remove_overlay" });
+                }, 100);
             });
             return;
         }

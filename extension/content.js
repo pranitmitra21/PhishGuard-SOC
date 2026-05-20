@@ -118,6 +118,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         injectWarningOverlay(request.data);
     } else if (request.action === "update_overlay") {
         updateOverlay(request.data);
+    } else if (request.action === "remove_overlay") {
+        const existing = document.getElementById('phishguard-xai-overlay');
+        if (existing) {
+            existing.remove();
+            document.body.style.overflow = 'auto';
+        }
     }
 });
 
