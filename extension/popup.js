@@ -27,8 +27,8 @@ document.addEventListener('DOMContentLoaded', function () {
     
     let isRegisterMode = false;
 
-    // Backend API base — works for both dev (8000) and docker (80 via /api proxy)
-    const API_BASE = 'http://127.0.0.1:8000/api';
+    // Backend API base — loaded from config.js
+    const API_BASE = `${CONFIG.API_BASE_URL}/api`;
 
     // Accordion Logic
     const toggleDetails  = document.getElementById('toggle-details');
@@ -367,9 +367,9 @@ document.addEventListener('DOMContentLoaded', function () {
     dashboardBtn.addEventListener('click', () => {
         chrome.storage.local.get(['soc_token'], (res) => {
             if (res.soc_token) {
-                chrome.tabs.create({ url: `http://localhost:5173?token=${res.soc_token}` });
+                chrome.tabs.create({ url: `${CONFIG.DASHBOARD_URL}?token=${res.soc_token}` });
             } else {
-                chrome.tabs.create({ url: 'http://localhost:5173' });
+                chrome.tabs.create({ url: `${CONFIG.DASHBOARD_URL}` });
             }
         });
     });

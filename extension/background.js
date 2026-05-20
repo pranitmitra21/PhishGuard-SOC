@@ -1,6 +1,9 @@
 // background.js - PhishGuard SOC v2.0
 
-const API_URL = "http://127.0.0.1:8000/api/detect";
+// Import global config variables
+importScripts('config.js');
+
+const API_URL = `${CONFIG.API_BASE_URL}/api/detect`;
 
 // Unique session ID stored in memory to identify the current active browser instance.
 // Using chrome.storage.session ensures it persists across service worker wake/sleep cycles
@@ -108,7 +111,7 @@ async function callAPI(features, sendResponse) {
                     sendResponse(data); 
                     return;
                 }
-                fetch("http://127.0.0.1:8000/api/vision-scan", {
+                fetch(`${CONFIG.API_BASE_URL}/api/vision-scan`, {
                     method: "POST",
                     headers: headers,
                     body: JSON.stringify({ url: features.url, screenshot_base64: dataUrl })

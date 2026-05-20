@@ -8,7 +8,7 @@ import {
   Database, X, Crosshair, Network, Zap, Lock, Wifi, Search, RefreshCw
 } from 'lucide-react';
 
-const API_URL = 'http://127.0.0.1:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 const SIDEBAR_W = 256; // matches w-64 in App.jsx
 const HEADER_H  = 64;  // matches h-16 in App.jsx
 

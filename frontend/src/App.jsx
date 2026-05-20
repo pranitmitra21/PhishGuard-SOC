@@ -17,7 +17,7 @@ import RetrainModel from './components/RetrainModel';
 import OverviewTab from './components/OverviewTab';
 import ThreatLogsTab from './components/ThreatLogsTab';
 
-const API_URL = 'http://127.0.0.1:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
 // Setup global Axios interceptor for JWT
 axios.interceptors.request.use(config => {
