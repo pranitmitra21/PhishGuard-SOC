@@ -26,7 +26,7 @@ A cinematic, cyber-aesthetic Security Operations Center (SOC).
 *   **Threat Matrix**: Displays real-time intercepted threats, their exact heuristic triggers, and their decentralized verification status.
 
 ### 4. The Ledger (Ethereum Smart Contracts)
-An immutable, decentralized ledger deployed on the **Ethereum Sepolia Testnet** (`0x18f9356d3643067A4a371f5cfE2E85B966E8A516`).
+An immutable, decentralized ledger deployed on the **Ethereum Sepolia Testnet** (`0xe5aF0d720dBC87feA55cd0A4688Ca930dB406D5f`).
 *   **Immutable Evidence**: When a threat is confirmed, the system pins the detailed report to an IPFS node (producing a CID) and pushes a compact JSON summary directly onto the blockchain.
 *   **Cryptographic Verification**: Analysts can verify the origin and authenticity of any logged threat by querying the Etherscan block explorer.
 
@@ -64,4 +64,4 @@ This script will concurrently spawn the Uvicorn AI Server, the React Dashboard, 
 ---
 
 ## 🔒 Security & Verification
-To verify the integrity of intercepted threats, cross-reference the URL hashes on the official [Sepolia Etherscan Block Explorer](https://sepolia.etherscan.io/address/0x18f9356d3643067A4a371f5cfE2E85B966E8A516#internaltx). The blockchain never forgets.
+To verify the integrity of intercepted threats, cross-reference the URL hashes on the official [Sepolia Etherscan Block Explorer](https://sepolia.etherscan.io/address/0xe5aF0d720dBC87feA55cd0A4688Ca930dB406D5f#internaltx). The blockchain never forgets.

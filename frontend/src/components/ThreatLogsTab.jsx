@@ -116,7 +116,7 @@ export default function ThreatLogsTab({
                           </h4>
                           {log.status === "Phishing" && log.logged_to_blockchain && (
                             <a 
-                              href={`https://sepolia.etherscan.io/address/0x18f9356d3643067A4a371f5cfE2E85B966E8A516`}
+                              href={`https://sepolia.etherscan.io/address/0xe5aF0d720dBC87feA55cd0A4688Ca930dB406D5f`}
                               target="_blank" 
                               rel="noreferrer"
                               className="inline-flex items-center gap-1.5 px-3 py-1 bg-cyber-pink/20 hover:bg-cyber-pink/40 border border-cyber-pink/50 text-cyber-pink text-[9px] font-bold uppercase tracking-wider transition-all shadow-[0_0_8px_rgba(255,0,60,0.3)]"

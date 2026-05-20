@@ -31,7 +31,7 @@ Render is the easiest platform for hosting Python APIs and PostgreSQL databases.
    * `DATABASE_URL`: (Paste the *Internal Database URL* you copied in Step 1)
    * `WEB3_PROVIDER_URI`: `https://ethereum-sepolia-rpc.publicnode.com`
    * `PRIVATE_KEY`: `cd011516441c023a7e7c5d5e2070c104e2d454df993a5492f3d87822a92787c3`
-   * `CONTRACT_ADDRESS`: `0x18f9356d3643067A4a371f5cfE2E85B966E8A516`
+   * `CONTRACT_ADDRESS`: `0xe5aF0d720dBC87feA55cd0A4688Ca930dB406D5f`
    * `GOOGLE_SAFE_BROWSING_API_KEY`: (Your Google API Key)
 7. Click **Create Web Service**. 
 8. Once it finishes building, Render will give you a public URL (e.g., `https://phishguard-backend.onrender.com`). **Copy this URL.**
